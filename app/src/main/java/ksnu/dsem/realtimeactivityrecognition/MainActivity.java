@@ -69,11 +69,12 @@ public class MainActivity extends AppCompatActivity
     private Location location;
 //    public LocationInformation locationInfo;
     SensorManager sManager;
-    Sensor mSensor;
+    Sensor accSensor, stepSensor;
     private View mLayout;
-    private TextView tvLat, tvLon, tvSpeed, tvActtype, tvSvm;
+    private TextView tvLat, tvLon, tvSpeed, tvActtype, tvSvm, tvStep;
     private RFModel model;
     private Accelerometer accelerometer;
+    private StepCounter stepcounter;
 
     //액티비티 인스턴스가 최초로 생성될 때 호출
     @Override
@@ -88,6 +89,7 @@ public class MainActivity extends AppCompatActivity
         tvLon = (TextView) findViewById(R.id.tvLon);
         tvSpeed = (TextView) findViewById(R.id.tvSpeed);
         tvSvm = (TextView) findViewById(R.id.tvSvm);
+        tvStep = (TextView)findViewById(R.id.tvStep);
         tvActtype = (TextView) findViewById(R.id.tvActtype);
         mLayout = (View) findViewById(R.id.map);
 
@@ -96,9 +98,12 @@ public class MainActivity extends AppCompatActivity
         //SevsorManager인스턴스 가져옴
         sManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         //default 센서로 가속도 센서 선택
-        mSensor = sManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        accSensor = sManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        stepSensor = sManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         accelerometer = new Accelerometer();
-        sManager.registerListener(accelerometer, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        stepcounter = new StepCounter();
+        sManager.registerListener(accelerometer, accSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        sManager.registerListener(stepcounter, stepSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
         locationRequest = new LocationRequest()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)//배터리소모보다 정확도 우선
@@ -192,7 +197,7 @@ public class MainActivity extends AppCompatActivity
                         = new LatLng(location.getLatitude(), location.getLongitude());
 
                 Acceleration acc = accelerometer.getAcc();
-
+                StepCount scount = stepcounter.getStep();
                 String markerTitle = getCurrentAddress(currentPosition);
                 String markerSnippet = "위도:" + String.valueOf(location.getLatitude())
                         + " 경도:" + String.valueOf(location.getLongitude()) + "속도:" + Double.parseDouble(String.format("%.4f", location.getSpeed()))
@@ -202,12 +207,9 @@ public class MainActivity extends AppCompatActivity
                 tvLon.setText(String.valueOf(location.getLongitude()) + "\t ");
                 tvSpeed.setText(String.valueOf(location.getSpeed()) + "\t ");
                 tvSvm.setText(String.valueOf(acc.getSvm()) + "\t ");
-
+                tvStep.setText(String.valueOf(scount.getCalstep()));
                 String acttypeStr = model.classifyActtype(location.getLatitude(), location.getLongitude(), location.getSpeed(), acc.getSvm());
                 tvActtype.setText(acttypeStr);
-
-                String test = "g";
-//                appendLog(test);
                 Log.d(TAG, "acttype: " + acttypeStr);
                 Log.d(TAG, "onLocationResult : " + markerSnippet);
                 //Log.d(TAG, "speed : " + getSpeed);
@@ -267,8 +269,6 @@ public class MainActivity extends AppCompatActivity
                 mMap.setMyLocationEnabled(true);
 
         }
-
-
     }
 
     //액티비티 사용자에게 보이지 않음, 포그라운드로 액티비티가 들어가면 onRestart 호출/ 종료시 onDestory 호출

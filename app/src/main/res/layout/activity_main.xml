@@ -60,13 +60,21 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="행동 유형: " />
+            android:text="\걸음수: " />
 
+        <TextView
+            android:id="@+id/tvStep"
+            android:layout_width="85dp"
+            android:layout_height="wrap_content" />
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id = "@+id/tvActtype "
-            />
+            android:text="행동 유형: " />
+
+        <TextView
+            android:id="@+id/tvActtype"
+            android:layout_width="85dp"
+            android:layout_height="wrap_content" />
     </LinearLayout>
 
 
