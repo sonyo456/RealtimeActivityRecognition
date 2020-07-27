@@ -60,6 +60,7 @@ public class Acceleration {
         this.x = x;
         this.y = y;
         this.z = z;
+        this.calculateSVM();
     }
 
     public void setAccelerometer(double x, double y, double z, double svm) {

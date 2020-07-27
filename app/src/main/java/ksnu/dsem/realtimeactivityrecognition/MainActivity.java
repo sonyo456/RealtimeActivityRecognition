@@ -46,6 +46,7 @@ import com.google.android.material.snackbar.Snackbar;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
+
 import ksnu.dsem.structure.*;
 
 public class MainActivity extends AppCompatActivity
@@ -67,7 +68,7 @@ public class MainActivity extends AppCompatActivity
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationRequest locationRequest;
     private Location location;
-//    public LocationInformation locationInfo;
+    private GPS gps;
     SensorManager sManager;
     Sensor accSensor, stepSensor;
     private View mLayout;
@@ -75,6 +76,8 @@ public class MainActivity extends AppCompatActivity
     private RFModel model;
     private Accelerometer accelerometer;
     private StepCounter stepcounter;
+
+    // linear accelerometer 추가
 
     //액티비티 인스턴스가 최초로 생성될 때 호출
     @Override
@@ -89,7 +92,7 @@ public class MainActivity extends AppCompatActivity
         tvLon = (TextView) findViewById(R.id.tvLon);
         tvSpeed = (TextView) findViewById(R.id.tvSpeed);
         tvSvm = (TextView) findViewById(R.id.tvSvm);
-        tvStep = (TextView)findViewById(R.id.tvStep);
+        tvStep = (TextView) findViewById(R.id.tvStep);
         tvActtype = (TextView) findViewById(R.id.tvActtype);
         mLayout = (View) findViewById(R.id.map);
 
@@ -102,18 +105,17 @@ public class MainActivity extends AppCompatActivity
         stepSensor = sManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         accelerometer = new Accelerometer();
         stepcounter = new StepCounter();
-        sManager.registerListener(accelerometer, accSensor, SensorManager.SENSOR_DELAY_NORMAL);
-        sManager.registerListener(stepcounter, stepSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
         locationRequest = new LocationRequest()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)//배터리소모보다 정확도 우선
                 .setInterval(UPDATE_INTERVAL_MS)
                 .setFastestInterval(FASTEST_UPDATE_INTERVAL_MS);
 
-        LocationSettingsRequest.Builder builder =
-                new LocationSettingsRequest.Builder();
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
 
         builder.addLocationRequest(locationRequest);
+
+        gps = new GPS();
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -125,66 +127,44 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onMapReady(final GoogleMap googleMap) {
         Log.d(TAG, "onMapReady :");
-
         mMap = googleMap;
 
-        //초기위치 군산대
-        setDefaultLocation();
-
+        setDefaultLocation();   //초기위치 군산대
 
         //런타임 퍼미션 처리
+        int hasFineLocationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         // 위치 퍼미션 체크
-        int hasFineLocationPermission = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION);
-        int hasCoarseLocationPermission = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION);
-
+        int hasCoarseLocationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
 
         if (hasFineLocationPermission == PackageManager.PERMISSION_GRANTED &&
                 hasCoarseLocationPermission == PackageManager.PERMISSION_GRANTED) {
-
             startLocationUpdates(); //위치 업데이트
-
-
         } else {  //퍼미션
-
-
             if (ActivityCompat.shouldShowRequestPermissionRationale(this, REQUIRED_PERMISSIONS[0])) {
-
                 Snackbar.make(mLayout, "이 앱을 실행하려면 위치 접근 권한이 필요합니다.",
                         Snackbar.LENGTH_INDEFINITE).setAction("확인", new View.OnClickListener() {
-
                     @Override
                     public void onClick(View view) {
-
-
-                        ActivityCompat.requestPermissions(MainActivity.this, REQUIRED_PERMISSIONS,
-                                PERMISSIONS_REQUEST_CODE);
+                        ActivityCompat.requestPermissions(MainActivity.this, REQUIRED_PERMISSIONS, PERMISSIONS_REQUEST_CODE);
                     }
                 }).show();
-
-
             } else {
-                ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS,
-                        PERMISSIONS_REQUEST_CODE);
+                ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, PERMISSIONS_REQUEST_CODE);
             }
-
         }
-
-
         mMap.getUiSettings().setMyLocationButtonEnabled(true);
         mMap.animateCamera(CameraUpdateFactory.zoomTo(15));
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-
             @Override
             public void onMapClick(LatLng latLng) {
-
                 Log.d(TAG, "onMapClick :");
             }
         });
     }
 
-
+    // 1. callback 시 gps의 locationInformation을 사용해서 현재 위치 정보를 lat, lon, speed를 넣을 것
+    // 2. android의 스레드를 열어서 textview 및 지도에서 위치 갱신을 위한 메소드를 생성
+    // 3. map 표시를 제외한 GPS 설정과 값 받아오는 메소드들은 GPS 클래스로 이전할 것
     final LocationCallback locationCallback = new LocationCallback() {
         @Override
         public void onLocationResult(LocationResult locationResult) {
@@ -192,9 +172,7 @@ public class MainActivity extends AppCompatActivity
             location = locationResult.getLastLocation();
 
             if (location != null) {
-
-                currentPosition
-                        = new LatLng(location.getLatitude(), location.getLongitude());
+                currentPosition = new LatLng(location.getLatitude(), location.getLongitude());
 
                 Acceleration acc = accelerometer.getAcc();
                 StepCount scount = stepcounter.getStep();
@@ -207,7 +185,7 @@ public class MainActivity extends AppCompatActivity
                 tvLon.setText(String.valueOf(location.getLongitude()) + "\t ");
                 tvSpeed.setText(String.valueOf(location.getSpeed()) + "\t ");
                 tvSvm.setText(String.valueOf(acc.getSvm()) + "\t ");
-                tvStep.setText(String.valueOf(scount.getCalstep()));
+                tvStep.setText(String.valueOf((int)scount.getStep()));
                 String acttypeStr = model.classifyActtype(location.getLatitude(), location.getLongitude(), location.getSpeed(), acc.getSvm());
                 tvActtype.setText(acttypeStr);
                 Log.d(TAG, "acttype: " + acttypeStr);
@@ -221,36 +199,25 @@ public class MainActivity extends AppCompatActivity
     };
 
     private void startLocationUpdates() {
-
         if (!checkLocationServicesStatus()) {
-
             Log.d(TAG, "startLocationUpdates : call showDialogForLocationServiceSetting");
             showDialogForLocationServiceSetting();
         } else {
-
-            int hasFineLocationPermission = ContextCompat.checkSelfPermission(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION);
-            int hasCoarseLocationPermission = ContextCompat.checkSelfPermission(this,
-                    Manifest.permission.ACCESS_COARSE_LOCATION);
-
+            int hasFineLocationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
+            int hasCoarseLocationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
 
             if (hasFineLocationPermission != PackageManager.PERMISSION_GRANTED ||
                     hasCoarseLocationPermission != PackageManager.PERMISSION_GRANTED) {
-
                 Log.d(TAG, "startLocationUpdates : 퍼미션 안가지고 있음");
                 return;
             }
 
-
             Log.d(TAG, "startLocationUpdates : call mFusedLocationClient.requestLocationUpdates");
-
             mFusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper());
 
             if (checkPermission())
                 mMap.setMyLocationEnabled(true);
-
         }
-
     }
 
     //OnCreate나 onRestart메소드 호출 후 바로 호출
@@ -269,6 +236,10 @@ public class MainActivity extends AppCompatActivity
                 mMap.setMyLocationEnabled(true);
 
         }
+
+        sManager.registerListener(accelerometer, accSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        sManager.registerListener(stepcounter, stepSensor, SensorManager.SENSOR_DELAY_NORMAL);
+
     }
 
     //액티비티 사용자에게 보이지 않음, 포그라운드로 액티비티가 들어가면 onRestart 호출/ 종료시 onDestory 호출
@@ -278,10 +249,12 @@ public class MainActivity extends AppCompatActivity
         super.onStop();
 
         if (mFusedLocationClient != null) {
-
             Log.d(TAG, "onStop : call stopLocationUpdates");
             mFusedLocationClient.removeLocationUpdates(locationCallback);
         }
+
+        sManager.unregisterListener(accelerometer);
+        sManager.unregisterListener(stepcounter);
     }
 
 
@@ -375,20 +348,14 @@ public class MainActivity extends AppCompatActivity
 
     //런타임 퍼미션 처리
     private boolean checkPermission() {
-
-        int hasFineLocationPermission = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION);
-        int hasCoarseLocationPermission = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION);
-
+        int hasFineLocationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
+        int hasCoarseLocationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
 
         if (hasFineLocationPermission == PackageManager.PERMISSION_GRANTED &&
                 hasCoarseLocationPermission == PackageManager.PERMISSION_GRANTED) {
             return true;
         }
-
         return false;
-
     }
 
     @Override
@@ -399,9 +366,7 @@ public class MainActivity extends AppCompatActivity
         if (permsRequestCode == PERMISSIONS_REQUEST_CODE && grandResults.length == REQUIRED_PERMISSIONS.length) {
             boolean check_result = true;
 
-
             // 모든 퍼미션을 허용했는지 체크
-
             for (int result : grandResults) {
                 if (result != PackageManager.PERMISSION_GRANTED) {
                     check_result = false;
@@ -409,22 +374,17 @@ public class MainActivity extends AppCompatActivity
                 }
             }
 
-
+            // 퍼미션을 허용했다면 위치 업데이트를 시작
             if (check_result) {
-
-                // 퍼미션을 허용했다면 위치 업데이트를 시작
                 startLocationUpdates();
+
             } else {
-
-
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, REQUIRED_PERMISSIONS[0])
                         || ActivityCompat.shouldShowRequestPermissionRationale(this, REQUIRED_PERMISSIONS[1])) {
                     Snackbar.make(mLayout, "퍼미션이 거부되었습니다. 앱을 다시 실행하여 퍼미션을 허용해주세요. ",
                             Snackbar.LENGTH_INDEFINITE).setAction("확인", new View.OnClickListener() {
-
                         @Override
                         public void onClick(View view) {
-
                             finish();
                         }
                     }).show();
@@ -432,23 +392,18 @@ public class MainActivity extends AppCompatActivity
                 } else {
                     Snackbar.make(mLayout, "퍼미션이 거부되었습니다. 설정(앱 정보)에서 퍼미션을 허용해야 합니다. ",
                             Snackbar.LENGTH_INDEFINITE).setAction("확인", new View.OnClickListener() {
-
                         @Override
                         public void onClick(View view) {
-
                             finish();
                         }
                     }).show();
                 }
             }
-
         }
     }
 
-
     //gps활성화
     private void showDialogForLocationServiceSetting() {
-
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setTitle("위치 서비스 비활성화");
         builder.setMessage("앱을 사용하기 위해서는 위치 서비스가 필요합니다.\n"
@@ -471,30 +426,22 @@ public class MainActivity extends AppCompatActivity
         builder.create().show();
     }
 
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         switch (requestCode) {
-
             case GPS_ENABLE_REQUEST_CODE:
-
                 //사용자가 GPS 활성 시켰는지 검사
                 if (checkLocationServicesStatus()) {
                     if (checkLocationServicesStatus()) {
-
                         Log.d(TAG, "onActivityResult : GPS 활성화 되있음");
-
-
                         needRequest = true;
 
                         return;
                     }
                 }
-
                 break;
         }
     }
-
 }

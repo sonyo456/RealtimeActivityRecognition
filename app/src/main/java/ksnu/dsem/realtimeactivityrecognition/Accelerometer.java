@@ -7,7 +7,7 @@ import android.hardware.SensorManager;
 
 import ksnu.dsem.structure.Acceleration;
 
-public class Accelerometer  implements SensorEventListener {
+public class Accelerometer implements SensorEventListener {
 
     private Acceleration acc;
 
@@ -15,12 +15,12 @@ public class Accelerometer  implements SensorEventListener {
         this.acc = new Acceleration();
     }
 
-    public Accelerometer(Acceleration acc){
+    public Accelerometer(Acceleration acc) {
         this.acc = acc;
     }
 
     public Acceleration getAcc() {
-        return acc;
+        return this.acc;
     }
 
     public void setAcc(Acceleration acc) {
@@ -31,19 +31,8 @@ public class Accelerometer  implements SensorEventListener {
     }
 
     public void onSensorChanged(SensorEvent event) {
-
-        if (event.sensor.getType()==Sensor.TYPE_ACCELEROMETER){
-            acc.setX(event.values[0]);
-            acc.setY(event.values[1]);
-            acc.setZ(event.values[2]);
-            acc.calculateSVM();
-//            acc.setSvm(event.values[0], event.values[1], event.values[2]);
-//            x = event.values[0];
-//            y = event.values[1];
-//            z = event.values[2];
-//            acc = new Acceleration(x, y, z);
-//            model.setSvm(acc.getX(),acc.getY(), acc.getZ());
-
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            acc.setXYZ(event.values[0], event.values[1], event.values[2]);
         }
 
     }

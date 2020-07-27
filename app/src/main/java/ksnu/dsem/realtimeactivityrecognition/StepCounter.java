@@ -9,8 +9,6 @@ import ksnu.dsem.structure.StepCount;
 public class StepCounter implements SensorEventListener {
 
     private StepCount tcount;
-    private int stepcount = 0;
-    private int newstepcount = 0;
 
     public StepCounter() {
         this.tcount = new StepCount();
@@ -34,14 +32,10 @@ public class StepCounter implements SensorEventListener {
     public void onSensorChanged(SensorEvent event) {
 
         if (event.sensor.getType()==Sensor.TYPE_STEP_COUNTER){
-            if(stepcount<1){
-                tcount.setStep((int)event.values[0]);
-                stepcount = (int)event.values[0];
+            if(tcount.getCumulativeStep()<1){
+                tcount.setInitialStep((int)event.values[0]);
             }
-            tcount.setNewstep((int)event.values[0]);
-            tcount.setStep(stepcount);
-            tcount.calculateStep();
-
+            tcount.setCumulativeStep((int)event.values[0]);
         }
 
     }

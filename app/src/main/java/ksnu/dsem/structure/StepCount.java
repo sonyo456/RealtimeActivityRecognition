@@ -1,9 +1,9 @@
 package ksnu.dsem.structure;
 
 public class StepCount {
-    private int step;
-    private int newstep;
-    private int calstep;
+    private int cumulativeStep; // cumulativeStep
+    private int initialStep;    // initialStep
+    private int step;    // step
 
     //    private double msvm;
     public StepCount() {
@@ -11,39 +11,37 @@ public class StepCount {
         this(0, 0, 0);
     }
 
-    public StepCount(int step, int newstep, int calstep) {
+    public StepCount(int cumulativeStep, int initialStep, int step) {
+        this.cumulativeStep = cumulativeStep;
+        this.initialStep = initialStep;
         this.step = step;
-        this.newstep = newstep;
-        this.calstep = calstep;
 
+    }
+
+    public void setCumulativeStep(int cumulativeStep) {
+        this.cumulativeStep = cumulativeStep;
+        this.step = cumulativeStep-this.initialStep;
+    }
+
+    public void setInitialStep(int initialStep) {
+        this.initialStep = initialStep;
     }
 
     public void setStep(int step) {
         this.step = step;
     }
 
-    public void setNewstep(int newstep) {
-        this.newstep = newstep;
+
+    public double getCumulativeStep() {
+        return this.cumulativeStep;
     }
 
-    public void setCalstep(int calstep) {
-        this.calstep = calstep;
-    }
-
-    public void calculateStep () {
-        this.calstep = newstep - step;
+    public double getInitialStep() {
+        return this.initialStep;
     }
 
     public double getStep() {
         return this.step;
-    }
-
-    public double getNewstep() {
-        return this.newstep;
-    }
-
-    public double getCalstep() {
-        return this.calstep;
     }
 
 }
