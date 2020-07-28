@@ -19,7 +19,9 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -70,14 +72,12 @@ public class MainActivity extends AppCompatActivity
     private Location location;
     private GPS gps;
     SensorManager sManager;
-    Sensor accSensor, stepSensor;
+    Sensor accSensor, stepSensor, linearSensor;
     private View mLayout;
     private TextView tvLat, tvLon, tvSpeed, tvActtype, tvSvm, tvStep;
     private RFModel model;
     private Accelerometer accelerometer;
     private StepCounter stepcounter;
-
-    // linear accelerometer 추가
 
     //액티비티 인스턴스가 최초로 생성될 때 호출
     @Override
@@ -95,16 +95,23 @@ public class MainActivity extends AppCompatActivity
         tvStep = (TextView) findViewById(R.id.tvStep);
         tvActtype = (TextView) findViewById(R.id.tvActtype);
         mLayout = (View) findViewById(R.id.map);
-
+//        backThread bThread = new backThread();
+//        bThread.start();
         model = new RFModel();//클래스 생성
 
-        //SevsorManager인스턴스 가져옴
         sManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         //default 센서로 가속도 센서 선택
         accSensor = sManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        linearSensor = sManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         stepSensor = sManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         accelerometer = new Accelerometer();
         stepcounter = new StepCounter();
+
+//        new Thread(){
+//            public void run(){
+//                while
+//            }
+//        }
 
         locationRequest = new LocationRequest()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)//배터리소모보다 정확도 우선
@@ -162,41 +169,40 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
-    // 1. callback 시 gps의 locationInformation을 사용해서 현재 위치 정보를 lat, lon, speed를 넣을 것
+    // 1. callback 시 gps의 locationInformation을 사용해서 현재 위치 정보를 lat, lon, speed를 넣을 것 - 수정 완료
     // 2. android의 스레드를 열어서 textview 및 지도에서 위치 갱신을 위한 메소드를 생성
     // 3. map 표시를 제외한 GPS 설정과 값 받아오는 메소드들은 GPS 클래스로 이전할 것
+
     final LocationCallback locationCallback = new LocationCallback() {
         @Override
         public void onLocationResult(LocationResult locationResult) {
             super.onLocationResult(locationResult);
             location = locationResult.getLastLocation();
-
             if (location != null) {
                 currentPosition = new LatLng(location.getLatitude(), location.getLongitude());
-
                 Acceleration acc = accelerometer.getAcc();
                 StepCount scount = stepcounter.getStep();
-                String markerTitle = getCurrentAddress(currentPosition);
-                String markerSnippet = "위도:" + String.valueOf(location.getLatitude())
-                        + " 경도:" + String.valueOf(location.getLongitude()) + "속도:" + Double.parseDouble(String.format("%.4f", location.getSpeed()))
-                        + " SVM:" + Double.parseDouble(String.format("%.4f", acc.getSvm()));
-//                LocationInformation li = new LocationInformation(location.getLatitude(), location.getLongitude(), location.getSpeed());
-                tvLat.setText(String.valueOf(location.getLatitude()) + "\t ");
-                tvLon.setText(String.valueOf(location.getLongitude()) + "\t ");
-                tvSpeed.setText(String.valueOf(location.getSpeed()) + "\t ");
+                LocationInformation li = new LocationInformation(location.getLatitude(), location.getLongitude(), location.getSpeed());
+                tvLat.setText(String.valueOf(li.getLatitude()) + "\t ");
+                tvLon.setText(String.valueOf(li.getLongitude()) + "\t ");
+                tvSpeed.setText(String.valueOf(li.getSpeed()) + "\t ");
                 tvSvm.setText(String.valueOf(acc.getSvm()) + "\t ");
-                tvStep.setText(String.valueOf((int)scount.getStep()));
+                tvStep.setText(String.valueOf((int) scount.getStep()));
+                Log.d(TAG, "LinearAcc: "+ acc.getLiAccx() + " " +acc.getLiAccy() + " " + acc.getLiAccz());
                 String acttypeStr = model.classifyActtype(location.getLatitude(), location.getLongitude(), location.getSpeed(), acc.getSvm());
                 tvActtype.setText(acttypeStr);
                 Log.d(TAG, "acttype: " + acttypeStr);
-                Log.d(TAG, "onLocationResult : " + markerSnippet);
-                //Log.d(TAG, "speed : " + getSpeed);
                 //현재 위치에 마커 생성하고 이동
-                setCurrentLocation(location, markerTitle, markerSnippet);
+//                String markerTitle = getCurrentAddress(currentPosition);
+//                String markerSnippet = "위도:" + String.valueOf(location.getLatitude())
+//                        + " 경도:" + String.valueOf(location.getLongitude()) + "속도:" + Double.parseDouble(String.format("%.4f", location.getSpeed()))
+//                        + " SVM:" + Double.parseDouble(String.format("%.4f", acc.getSvm()));
+                setCurrentLocation(location);
                 mCurrentLocation = location;
             }
         }
     };
+
 
     private void startLocationUpdates() {
         if (!checkLocationServicesStatus()) {
@@ -239,6 +245,7 @@ public class MainActivity extends AppCompatActivity
 
         sManager.registerListener(accelerometer, accSensor, SensorManager.SENSOR_DELAY_NORMAL);
         sManager.registerListener(stepcounter, stepSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        sManager.registerListener(accelerometer, linearSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
     }
 
@@ -302,16 +309,16 @@ public class MainActivity extends AppCompatActivity
     }
 
 
-    public void setCurrentLocation(Location location, String markerTitle, String markerSnippet) {
-
+    public void setCurrentLocation(Location location) {
+//    public void setCurrentLocation(Location location, String markerTitle, String markerSnippet) {
         if (currentMarker != null) currentMarker.remove();
 
         LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
         MarkerOptions markerOptions = new MarkerOptions();
         markerOptions.position(currentLatLng);
-        markerOptions.title(markerTitle);
-        markerOptions.snippet(markerSnippet);
+//        markerOptions.title(markerTitle);
+//        markerOptions.snippet(markerSnippet);
         markerOptions.draggable(true);
 
         currentMarker = mMap.addMarker(markerOptions);

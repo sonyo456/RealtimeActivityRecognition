@@ -34,6 +34,9 @@ public class Accelerometer implements SensorEventListener {
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             acc.setXYZ(event.values[0], event.values[1], event.values[2]);
         }
+        if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
+            acc.setLinearXYZ(event.values[0], event.values[1], event.values[2]);
+        }
 
     }
 
