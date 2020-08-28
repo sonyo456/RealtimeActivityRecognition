@@ -64,8 +64,8 @@ public class RFModel {
         //AssetManager assetManager = getAssets();
         try {
             //cls = (Classifier) weka.core.SerializationHelper.read(getAssets().open("REAL_MODEL.model"));
-//            classifier = (Classifier) weka.core.SerializationHelper.read("/data/data/ksnu.dsem.realtimeactivityrecognition/NO_HR_MODEL.model");
-            classifier = (Classifier) weka.core.SerializationHelper.read("/data/user/0/ksnu.dsem.realtimeactivityrecognition/model/NO_HR_MODEL.model");
+            classifier = (Classifier) weka.core.SerializationHelper.read("/data/data/ksnu.dsem.realtimeactivityrecognition/NO_HR_MODEL.model");
+//            classifier = (Classifier) weka.core.SerializationHelper.read("/data/user/0/ksnu.dsem.realtimeactivityrecognition/model/NO_HR_MODEL.model");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -92,7 +92,7 @@ public class RFModel {
     }
 
     //매개변수
-    public String classifyActtype(double latitude, double longitude, float speed, double svm) {
+    public String classifyActtype(double latitude, double longitude, double speed, double svm) {
         String acttype = "";
 
         DenseInstance currentInstance = new DenseInstance(dataUnpredicted.numAttributes()) {
@@ -100,8 +100,8 @@ public class RFModel {
 
                 setValue(attribute_LAT, latitude);
                 setValue(attribute_LON, longitude);
-                setValue(attribute_SVM, svm);
                 setValue(attribute_SPEED, speed);
+                setValue(attribute_SVM, svm);
 
             }
         };

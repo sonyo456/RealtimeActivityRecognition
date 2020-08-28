@@ -1,11 +1,7 @@
 package ksnu.dsem.realtimeactivityrecognition;
 
+import androidx.annotation.IdRes;
 import androidx.appcompat.app.AppCompatActivity;
-
-import android.hardware.Sensor;
-import android.hardware.SensorManager;
-import android.os.Bundle;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
@@ -15,16 +11,23 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,9 +48,15 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+
 
 import ksnu.dsem.structure.*;
 
@@ -55,10 +64,10 @@ public class MainActivity extends AppCompatActivity
         implements OnMapReadyCallback,
         ActivityCompat.OnRequestPermissionsResultCallback {
 
-    private GoogleMap mMap;
+    GoogleMap mMap;
     private Marker currentMarker = null;
 
-    private static final String TAG = "googlemap_example";
+    static final String TAG = "realtime_activity_recog";
     private static final int GPS_ENABLE_REQUEST_CODE = 2001;
     private static final int UPDATE_INTERVAL_MS = 3000;  // 위치 update 주기
     private static final int FASTEST_UPDATE_INTERVAL_MS = 500; // 위치 획득 후 update 되는 주기
@@ -70,14 +79,25 @@ public class MainActivity extends AppCompatActivity
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationRequest locationRequest;
     private Location location;
-    private GPS gps;
+    //    private GPS gps;
+//    /private Context context;
     SensorManager sManager;
     Sensor accSensor, stepSensor, linearSensor;
-    private View mLayout;
+    View mLayout;
     private TextView tvLat, tvLon, tvSpeed, tvActtype, tvSvm, tvStep;
+    private RadioButton rb1sec, rb5sec, rb60sec, rbwalking, rbrunning, rbstationary, rbincar, rbinvehicle, rbunknown;
+    private RadioGroup radioGroup, radioGroup2;
+
     private RFModel model;
     private Accelerometer accelerometer;
     private StepCounter stepcounter;
+    private LocationInformation li;
+//    private SaveLog saveLog;
+    ValueHandler handler = new ValueHandler();
+    private int cycle = 5;
+    String acttype = "";
+    final static String foldername = Environment.getExternalStorageDirectory().getAbsolutePath()+"/TestLog";
+    final static String filename = "logfile.txt";
 
     //액티비티 인스턴스가 최초로 생성될 때 호출
     @Override
@@ -94,11 +114,22 @@ public class MainActivity extends AppCompatActivity
         tvSvm = (TextView) findViewById(R.id.tvSvm);
         tvStep = (TextView) findViewById(R.id.tvStep);
         tvActtype = (TextView) findViewById(R.id.tvActtype);
+        rb1sec = (RadioButton) findViewById(R.id.rb1sec);
+        rb5sec = (RadioButton) findViewById(R.id.rb5sec);
+        rb60sec = (RadioButton) findViewById(R.id.rb60sec);
+        rbwalking = (RadioButton) findViewById(R.id.rbwalking);
+        rbrunning = (RadioButton) findViewById(R.id.rbrunning);
+        rbincar = (RadioButton) findViewById(R.id.rbincar);
+        rbinvehicle = (RadioButton) findViewById(R.id.rbinvehicle);
+        rbstationary = (RadioButton) findViewById(R.id.rbstationary);
+        rbunknown = (RadioButton) findViewById(R.id.rbunknown);
         mLayout = (View) findViewById(R.id.map);
-//        backThread bThread = new backThread();
-//        bThread.start();
-        model = new RFModel();//클래스 생성
+        radioGroup = (RadioGroup) findViewById(R.id.radioGroup);
+        radioGroup2 = (RadioGroup) findViewById(R.id.radioGroup2);
+        radioGroup.setOnCheckedChangeListener(radioGroupButtonChangeListener);
+        radioGroup2.setOnCheckedChangeListener(radioGroupButtonChangeListener2);
 
+        model = new RFModel();//클래스 생성
         sManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         //default 센서로 가속도 센서 선택
         accSensor = sManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -106,30 +137,28 @@ public class MainActivity extends AppCompatActivity
         stepSensor = sManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         accelerometer = new Accelerometer();
         stepcounter = new StepCounter();
-
-//        new Thread(){
-//            public void run(){
-//                while
-//            }
-//        }
-
+        li = new LocationInformation();
+//        saveLog = new SaveLog();
+        //thread 생성 및 시작
+        BackgroundThread thread = new BackgroundThread();
+        thread.start();
+//        gps = new GPS();
+//        locationRequest = gps.locationRequest;
         locationRequest = new LocationRequest()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)//배터리소모보다 정확도 우선
                 .setInterval(UPDATE_INTERVAL_MS)
                 .setFastestInterval(FASTEST_UPDATE_INTERVAL_MS);
-
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
-
         builder.addLocationRequest(locationRequest);
-
-        gps = new GPS();
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
     }
+
 
     @Override
     public void onMapReady(final GoogleMap googleMap) {
@@ -145,7 +174,7 @@ public class MainActivity extends AppCompatActivity
 
         if (hasFineLocationPermission == PackageManager.PERMISSION_GRANTED &&
                 hasCoarseLocationPermission == PackageManager.PERMISSION_GRANTED) {
-            startLocationUpdates(); //위치 업데이트
+            this.startLocationUpdates(); //위치 업데이트
         } else {  //퍼미션
             if (ActivityCompat.shouldShowRequestPermissionRationale(this, REQUIRED_PERMISSIONS[0])) {
                 Snackbar.make(mLayout, "이 앱을 실행하려면 위치 접근 권한이 필요합니다.",
@@ -169,45 +198,53 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
-    // 1. callback 시 gps의 locationInformation을 사용해서 현재 위치 정보를 lat, lon, speed를 넣을 것 - 수정 완료
-    // 2. android의 스레드를 열어서 textview 및 지도에서 위치 갱신을 위한 메소드를 생성
-    // 3. map 표시를 제외한 GPS 설정과 값 받아오는 메소드들은 GPS 클래스로 이전할 것
-
-    final LocationCallback locationCallback = new LocationCallback() {
+    RadioGroup.OnCheckedChangeListener radioGroupButtonChangeListener = new RadioGroup.OnCheckedChangeListener() {
         @Override
-        public void onLocationResult(LocationResult locationResult) {
-            super.onLocationResult(locationResult);
-            location = locationResult.getLastLocation();
-            if (location != null) {
-                currentPosition = new LatLng(location.getLatitude(), location.getLongitude());
-                Acceleration acc = accelerometer.getAcc();
-                StepCount scount = stepcounter.getStep();
-                LocationInformation li = new LocationInformation(location.getLatitude(), location.getLongitude(), location.getSpeed());
-                tvLat.setText(String.valueOf(li.getLatitude()) + "\t ");
-                tvLon.setText(String.valueOf(li.getLongitude()) + "\t ");
-                tvSpeed.setText(String.valueOf(li.getSpeed()) + "\t ");
-                tvSvm.setText(String.valueOf(acc.getSvm()) + "\t ");
-                tvStep.setText(String.valueOf((int) scount.getStep()));
-                Log.d(TAG, "LinearAcc: "+ acc.getLiAccx() + " " +acc.getLiAccy() + " " + acc.getLiAccz());
-                String acttypeStr = model.classifyActtype(location.getLatitude(), location.getLongitude(), location.getSpeed(), acc.getSvm());
-                tvActtype.setText(acttypeStr);
-                Log.d(TAG, "acttype: " + acttypeStr);
-                //현재 위치에 마커 생성하고 이동
-//                String markerTitle = getCurrentAddress(currentPosition);
-//                String markerSnippet = "위도:" + String.valueOf(location.getLatitude())
-//                        + " 경도:" + String.valueOf(location.getLongitude()) + "속도:" + Double.parseDouble(String.format("%.4f", location.getSpeed()))
-//                        + " SVM:" + Double.parseDouble(String.format("%.4f", acc.getSvm()));
-                setCurrentLocation(location);
-                mCurrentLocation = location;
+        public void onCheckedChanged(RadioGroup radioGroup, @IdRes int i) {
+
+            if (i == R.id.rb1sec) {
+                cycle = 1;
+                Toast.makeText(MainActivity.this, "데이터 수집 주기는 1초 입니다.", Toast.LENGTH_SHORT).show();
+            } else if (i == R.id.rb5sec) {
+                cycle = 5;
+                Toast.makeText(MainActivity.this, "데이터 수집 주기는 5초 입니다.", Toast.LENGTH_SHORT).show();
+            } else if (i == R.id.rb60sec) {
+                cycle=60;
+                Toast.makeText(MainActivity.this, "데이터 수집 주기는 60초 입니다.", Toast.LENGTH_SHORT).show();
+            }
+        }
+    };
+    RadioGroup.OnCheckedChangeListener radioGroupButtonChangeListener2 = new RadioGroup.OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(RadioGroup radioGroup2, @IdRes int i) {
+
+            if (i == R.id.rbwalking) {
+                acttype = "walking";
+                Toast.makeText(MainActivity.this, "현재 행동유형은 걷기입니다", Toast.LENGTH_SHORT).show();
+            } else if (i == R.id.rbrunning) {
+                acttype = "running";
+                Toast.makeText(MainActivity.this, "현재 행동유형은 뛰기입니다", Toast.LENGTH_SHORT).show();
+            } else if (i == R.id.rbincar) {
+                acttype = "in_car";
+                Toast.makeText(MainActivity.this, "현재 행동유형은 차타기입니다", Toast.LENGTH_SHORT).show();
+            }else if (i == R.id.rbinvehicle) {
+                acttype = "in_vehicle";
+                Toast.makeText(MainActivity.this, "현재 행동유형은 자전거타기입니다", Toast.LENGTH_SHORT).show();
+            }else if (i == R.id.rbstationary) {
+                acttype = "stationary";
+                Toast.makeText(MainActivity.this, "현재 행동유형은 멈춤입니다", Toast.LENGTH_SHORT).show();
+            }else if (i == R.id.rbunknown) {
+                acttype = "unknown";
+                Toast.makeText(MainActivity.this, "현재 행동유형은 unknown입니다", Toast.LENGTH_SHORT).show();
             }
         }
     };
 
 
     private void startLocationUpdates() {
-        if (!checkLocationServicesStatus()) {
+        if (!this.checkLocationServicesStatus()) {
             Log.d(TAG, "startLocationUpdates : call showDialogForLocationServiceSetting");
-            showDialogForLocationServiceSetting();
+            this.showDialogForLocationServiceSetting();
         } else {
             int hasFineLocationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
             int hasCoarseLocationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
@@ -219,9 +256,9 @@ public class MainActivity extends AppCompatActivity
             }
 
             Log.d(TAG, "startLocationUpdates : call mFusedLocationClient.requestLocationUpdates");
-            mFusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper());
+            mFusedLocationClient.requestLocationUpdates(locationRequest, this.locationCallback, Looper.myLooper());
 
-            if (checkPermission())
+            if (this.checkPermission())
                 mMap.setMyLocationEnabled(true);
         }
     }
@@ -233,14 +270,12 @@ public class MainActivity extends AppCompatActivity
 
         Log.d(TAG, "onStart");
 
-        if (checkPermission()) {
-
+        if (this.checkPermission()) {
             Log.d(TAG, "onStart : call mFusedLocationClient.requestLocationUpdates");
-            mFusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null);
+            mFusedLocationClient.requestLocationUpdates(locationRequest, this.locationCallback, null);
 
             if (mMap != null)
                 mMap.setMyLocationEnabled(true);
-
         }
 
         sManager.registerListener(accelerometer, accSensor, SensorManager.SENSOR_DELAY_NORMAL);
@@ -252,28 +287,105 @@ public class MainActivity extends AppCompatActivity
     //액티비티 사용자에게 보이지 않음, 포그라운드로 액티비티가 들어가면 onRestart 호출/ 종료시 onDestory 호출
     @Override
     protected void onStop() {
-
         super.onStop();
 
         if (mFusedLocationClient != null) {
             Log.d(TAG, "onStop : call stopLocationUpdates");
-            mFusedLocationClient.removeLocationUpdates(locationCallback);
+            mFusedLocationClient.removeLocationUpdates(this.locationCallback);
         }
-
         sManager.unregisterListener(accelerometer);
         sManager.unregisterListener(stepcounter);
     }
+    public void saveLog(String contents){
+        try {
+            FileOutputStream fos=openFileOutput("Data.txt",MODE_APPEND);
+            //이어붙이기로
+            PrintWriter writer= new PrintWriter(fos);
+            writer.println(contents);
+            writer.flush();
+            writer.close();
+
+            Toast.makeText(this, "saved",Toast.LENGTH_SHORT).show();
+
+        } catch (FileNotFoundException e) {e.printStackTrace();}
+
+    }
+    public void UpdateData() {
+        Acceleration acc = accelerometer.getAcc();
+        StepCount scount = stepcounter.getStep();
+        tvLat.setText(String.valueOf(li.getLatitude()) + "\t ");
+        tvLon.setText(String.valueOf(li.getLongitude()) + "\t ");
+        tvSpeed.setText(String.valueOf(li.getSpeed()) + "\t ");
+        tvSvm.setText(String.valueOf(acc.getSvm()) + "\t ");
+        tvStep.setText(String.valueOf((int) scount.getStep()));
+        String acttypeStr = model.classifyActtype(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm());
+        tvActtype.setText(acttypeStr);
+        Log.d(TAG, "acttype: " + acttypeStr);
+    }
+
+    class BackgroundThread extends Thread {
+        boolean running = false;
+
+        public void run() {
+            int value = 0;
+            running = true;
+            while (running) {
+                Message message = handler.obtainMessage();
+                Bundle bundle = new Bundle();
+                bundle.putInt("value", value);
+                message.setData(bundle);
+                handler.sendMessage(message);
+
+                try {
+                    Thread.sleep(cycle*1000);
+                } catch (Exception e) {
+                }
+            }
+        }
+    }
+
+    class ValueHandler extends Handler {
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            super.handleMessage(msg);
+            Bundle bundle = msg.getData();
+            int value = bundle.getInt("value");
+            String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+            String content = now + "," + tvLat.getText() + "," + tvLon.getText() + "," + tvSpeed.getText() + "," + tvSvm.getText() + "," + tvActtype.getText();
+            if (value == 0) {
+                saveLog(content);
+                UpdateData();
+                Log.d(TAG, "time: " + now);
+
+            }
+        }
+    }
+    // 1. callback 시 gps의 locationInformation을 사용해서 현재 위치 정보를 lat, lon, speed를 넣을 것 - 수정 완료
+    // 2. android의 스레드를 열어서 textview 및 지도에서 위치 갱신을 위한 메소드를 생성 - 수정 완료
+    // 3. map 표시를 제외한 GPS 설정과 값 받아오는 메소드들은 GPS 클래스로 이전할 것
+
+    final LocationCallback locationCallback = new LocationCallback() {
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+            super.onLocationResult(locationResult);
+            location = locationResult.getLastLocation();
+            if (location != null) {
+                currentPosition = new LatLng(location.getLatitude(), location.getLongitude());
+                li.setLocationInformation(location.getLatitude(), location.getLongitude(), location.getSpeed());
+                String markerTitle = getCurrentAddress(currentPosition);
+                setCurrentLocation(location);
+                mCurrentLocation = location;
+            }
+        }
+    };
 
 
     public String getCurrentAddress(LatLng latlng) {
 
         //GPS를 주소로 변환
         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-
         List<Address> addresses;
-
         try {
-
             addresses = geocoder.getFromLocation(
                     latlng.latitude,
                     latlng.longitude,
@@ -285,14 +397,11 @@ public class MainActivity extends AppCompatActivity
         } catch (IllegalArgumentException illegalArgumentException) {
             Toast.makeText(this, "잘못된 GPS 좌표", Toast.LENGTH_LONG).show();
             return "잘못된 GPS 좌표";
-
         }
-
 
         if (addresses == null || addresses.size() == 0) {
             Toast.makeText(this, "주소 미발견", Toast.LENGTH_LONG).show();
             return "주소 미발견";
-
         } else {
             Address address = addresses.get(0);
             return address.getAddressLine(0).toString();
@@ -317,8 +426,6 @@ public class MainActivity extends AppCompatActivity
 
         MarkerOptions markerOptions = new MarkerOptions();
         markerOptions.position(currentLatLng);
-//        markerOptions.title(markerTitle);
-//        markerOptions.snippet(markerSnippet);
         markerOptions.draggable(true);
 
         currentMarker = mMap.addMarker(markerOptions);
@@ -329,7 +436,6 @@ public class MainActivity extends AppCompatActivity
 
 
     public void setDefaultLocation() {
-
 
         //디폴트 위치 군산대학교
         LatLng DEFAULT_LOCATION = new LatLng(35.945287, 126.682163);
@@ -353,7 +459,7 @@ public class MainActivity extends AppCompatActivity
     }
 
 
-    //런타임 퍼미션 처리
+    //    런타임 퍼미션 처리
     private boolean checkPermission() {
         int hasFineLocationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         int hasCoarseLocationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
