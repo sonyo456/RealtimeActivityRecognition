@@ -32,26 +32,41 @@ import ksnu.dsem.structure.LocationInformation;
 import static android.content.Context.LOCATION_SERVICE;
 import static android.content.Context.SENSOR_SERVICE;
 
-public class GPS  extends MainActivity{
+public class GPS{
     public LocationRequest locationRequest;
     private Location location;
     private LatLng currentPosition;
     private Location mCurrentLocation;
-    private SensorManager sManager;
+//    private SensorManager sManager;
     private LocationInformation locationInfo;
-    private FusedLocationProviderClient mFusedLocationClient;
-    private MainActivity mainActivity;
-    private GoogleMap mMap;
+//    private FusedLocationProviderClient mFusedLocationClient;
+//    private MainActivity mainActivity;
+//    private GoogleMap mMap;
     boolean needRequest = false;
     private static final int UPDATE_INTERVAL_MS = 3000;
     private static final int FASTEST_UPDATE_INTERVAL_MS = 500; // 위치 획득 후 update 되는 주기
     private static final int GPS_ENABLE_REQUEST_CODE = 2001;
     private static final int PERMISSIONS_REQUEST_CODE = 100;
-    String[] REQUIRED_PERMISSIONS = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION};
+//    String[] REQUIRED_PERMISSIONS = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION};
+//
+//    public final LocationCallback locationCallback = new LocationCallback() {
+//        @Override
+//        public void onLocationResult(LocationResult locationResult) {
+//            super.onLocationResult(locationResult);
+//            location = locationResult.getLastLocation();
+//            if (location != null) {
+//                currentPosition = new LatLng(location.getLatitude(), location.getLongitude());
+//                locationInfo.setLocationInformation(location.getLatitude(), location.getLongitude(), location.getSpeed());
+//                String markerTitle = getCurrentAddress(currentPosition);
+//                setCurrentLocation(location);
+//                mCurrentLocation = location;
+//            }
+//        }
+//    };
 
     public GPS() {
         this.locationInfo = new LocationInformation();
-        this.mainActivity = new MainActivity();
+//        this.mainActivity = mainActivity;
 //        this.sManager = (SensorManager)mainActivity.getSystemService(SENSOR_SERVICE);
         this.locationRequest = new LocationRequest()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)//배터리소모보다 정확도 우선
@@ -60,4 +75,48 @@ public class GPS  extends MainActivity{
 
     }
 
+
+//
+//
+//    public void showDialogForLocationServiceSetting() {
+//        AlertDialog.Builder builder = new AlertDialog.Builder(mainActivity);
+//        builder.setTitle("위치 서비스 비활성화");
+//        builder.setMessage("앱을 사용하기 위해서는 위치 서비스가 필요합니다.\n"
+//                + "위치 설정을 수정하시겠습니까?");
+//        builder.setCancelable(true);
+//        builder.setPositiveButton("설정", new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialog, int id) {
+//                Intent callGPSSettingIntent
+//                        = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+//                startActivityForResult(callGPSSettingIntent, GPS_ENABLE_REQUEST_CODE);
+//            }
+//        });
+//        builder.setNegativeButton("취소", new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialog, int id) {
+//                dialog.cancel();
+//            }
+//        });
+//        builder.create().show();
+//    }
+
+//    @Override
+//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+//        super.onActivityResult(requestCode, resultCode, data);
+//
+//        switch (requestCode) {
+//            case GPS_ENABLE_REQUEST_CODE:
+//                //사용자가 GPS 활성 시켰는지 검사
+//                if (mainActivity.checkLocationServicesStatus()) {
+//                    if (mainActivity.checkLocationServicesStatus()) {
+//                        Log.d(TAG, "onActivityResult : GPS 활성화 되있음");
+//                        needRequest = true;
+//
+//                        return;
+//                    }
+//                }
+//                break;
+//        }
+//    }
 }

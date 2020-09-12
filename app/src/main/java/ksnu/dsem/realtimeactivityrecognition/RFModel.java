@@ -64,7 +64,9 @@ public class RFModel {
         //AssetManager assetManager = getAssets();
         try {
             //cls = (Classifier) weka.core.SerializationHelper.read(getAssets().open("REAL_MODEL.model"));
+            //실제 핸드폰
             classifier = (Classifier) weka.core.SerializationHelper.read("/data/data/ksnu.dsem.realtimeactivityrecognition/NO_HR_MODEL.model");
+
 //            classifier = (Classifier) weka.core.SerializationHelper.read("/data/user/0/ksnu.dsem.realtimeactivityrecognition/model/NO_HR_MODEL.model");
         } catch (Exception e) {
             e.printStackTrace();

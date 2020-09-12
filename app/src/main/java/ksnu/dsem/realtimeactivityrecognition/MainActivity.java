@@ -18,14 +18,12 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -52,8 +50,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -79,8 +75,7 @@ public class MainActivity extends AppCompatActivity
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationRequest locationRequest;
     private Location location;
-    //    private GPS gps;
-//    /private Context context;
+    private GPS gps;
     SensorManager sManager;
     Sensor accSensor, stepSensor, linearSensor;
     View mLayout;
@@ -92,12 +87,14 @@ public class MainActivity extends AppCompatActivity
     private Accelerometer accelerometer;
     private StepCounter stepcounter;
     private LocationInformation li;
-//    private SaveLog saveLog;
+
+    private DataStructure ds;
+
     ValueHandler handler = new ValueHandler();
     private int cycle = 5;
-    String acttype = "";
-    final static String foldername = Environment.getExternalStorageDirectory().getAbsolutePath()+"/TestLog";
-    final static String filename = "logfile.txt";
+    String corrActtype = " ";
+    int count = 1;
+    String currtime;
 
     //액티비티 인스턴스가 최초로 생성될 때 호출
     @Override
@@ -138,11 +135,10 @@ public class MainActivity extends AppCompatActivity
         accelerometer = new Accelerometer();
         stepcounter = new StepCounter();
         li = new LocationInformation();
-//        saveLog = new SaveLog();
         //thread 생성 및 시작
         BackgroundThread thread = new BackgroundThread();
         thread.start();
-//        gps = new GPS();
+        gps = new GPS();
 //        locationRequest = gps.locationRequest;
         locationRequest = new LocationRequest()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)//배터리소모보다 정확도 우선
@@ -150,6 +146,8 @@ public class MainActivity extends AppCompatActivity
                 .setFastestInterval(FASTEST_UPDATE_INTERVAL_MS);
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
         builder.addLocationRequest(locationRequest);
+
+        ds = new DataStructure();
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -162,7 +160,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onMapReady(final GoogleMap googleMap) {
-        Log.d(TAG, "onMapReady :");
+        Log.d(TAG, "[RAR] onMapReady :");
         mMap = googleMap;
 
         setDefaultLocation();   //초기위치 군산대
@@ -198,6 +196,7 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
+    //주기 라디오 그룹
     RadioGroup.OnCheckedChangeListener radioGroupButtonChangeListener = new RadioGroup.OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(RadioGroup radioGroup, @IdRes int i) {
@@ -209,39 +208,42 @@ public class MainActivity extends AppCompatActivity
                 cycle = 5;
                 Toast.makeText(MainActivity.this, "데이터 수집 주기는 5초 입니다.", Toast.LENGTH_SHORT).show();
             } else if (i == R.id.rb60sec) {
-                cycle=60;
+                cycle = 60;
                 Toast.makeText(MainActivity.this, "데이터 수집 주기는 60초 입니다.", Toast.LENGTH_SHORT).show();
             }
         }
     };
+
+    //행동 유형 라디오 그룹
     RadioGroup.OnCheckedChangeListener radioGroupButtonChangeListener2 = new RadioGroup.OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(RadioGroup radioGroup2, @IdRes int i) {
 
             if (i == R.id.rbwalking) {
-                acttype = "walking";
+                corrActtype = "walking";
                 Toast.makeText(MainActivity.this, "현재 행동유형은 걷기입니다", Toast.LENGTH_SHORT).show();
             } else if (i == R.id.rbrunning) {
-                acttype = "running";
+                corrActtype = "running";
                 Toast.makeText(MainActivity.this, "현재 행동유형은 뛰기입니다", Toast.LENGTH_SHORT).show();
             } else if (i == R.id.rbincar) {
-                acttype = "in_car";
+                corrActtype = "in_car";
                 Toast.makeText(MainActivity.this, "현재 행동유형은 차타기입니다", Toast.LENGTH_SHORT).show();
-            }else if (i == R.id.rbinvehicle) {
-                acttype = "in_vehicle";
+            } else if (i == R.id.rbinvehicle) {
+                corrActtype = "in_vehicle";
                 Toast.makeText(MainActivity.this, "현재 행동유형은 자전거타기입니다", Toast.LENGTH_SHORT).show();
-            }else if (i == R.id.rbstationary) {
-                acttype = "stationary";
+            } else if (i == R.id.rbstationary) {
+                corrActtype = "stationary";
                 Toast.makeText(MainActivity.this, "현재 행동유형은 멈춤입니다", Toast.LENGTH_SHORT).show();
-            }else if (i == R.id.rbunknown) {
-                acttype = "unknown";
+            } else if (i == R.id.rbunknown) {
+                corrActtype = "unknown";
                 Toast.makeText(MainActivity.this, "현재 행동유형은 unknown입니다", Toast.LENGTH_SHORT).show();
             }
         }
     };
 
 
-    private void startLocationUpdates() {
+    public void startLocationUpdates() {
+        Log.d(TAG, "[RAR] call startLocationUpdates");
         if (!this.checkLocationServicesStatus()) {
             Log.d(TAG, "startLocationUpdates : call showDialogForLocationServiceSetting");
             this.showDialogForLocationServiceSetting();
@@ -255,7 +257,7 @@ public class MainActivity extends AppCompatActivity
                 return;
             }
 
-            Log.d(TAG, "startLocationUpdates : call mFusedLocationClient.requestLocationUpdates");
+            Log.d(TAG, "[RAR] startLocationUpdates : call mFusedLocationClient.requestLocationUpdates");
             mFusedLocationClient.requestLocationUpdates(locationRequest, this.locationCallback, Looper.myLooper());
 
             if (this.checkPermission())
@@ -267,12 +269,12 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onStart() {
         super.onStart();
+        currtime = ds.getCurrtime();
+        Log.d(TAG, "[RAR] onStart");
 
-        Log.d(TAG, "onStart");
-
-        if (this.checkPermission()) {
-            Log.d(TAG, "onStart : call mFusedLocationClient.requestLocationUpdates");
-            mFusedLocationClient.requestLocationUpdates(locationRequest, this.locationCallback, null);
+        if (checkPermission()) {
+            Log.d(TAG, "[RAR] onStart : call mFusedLocationClient.requestLocationUpdates");
+//            mFusedLocationClient.requestLocationUpdates(locationRequest, this.locationCallback, null);
 
             if (mMap != null)
                 mMap.setMyLocationEnabled(true);
@@ -290,55 +292,105 @@ public class MainActivity extends AppCompatActivity
         super.onStop();
 
         if (mFusedLocationClient != null) {
-            Log.d(TAG, "onStop : call stopLocationUpdates");
+            Log.d(TAG, "[RAR] onStop : call stopLocationUpdates");
             mFusedLocationClient.removeLocationUpdates(this.locationCallback);
         }
         sManager.unregisterListener(accelerometer);
         sManager.unregisterListener(stepcounter);
     }
-    public void saveLog(String contents){
+
+    //데이터 업데이트
+    public void updateData() {
+        Acceleration acc = accelerometer.getAcc();
+        StepCount scount = stepcounter.getStep();
+        String acttypeStr = model.classifyActtype(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm());
+
+        ds.setCurrentData(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm(), (int) scount.getStep(), acttypeStr);
+        Log.d(TAG, "acttype: " + acttypeStr);
+    }
+
+    //데이터 수집
+    public void correctData() {
+        Acceleration acc = accelerometer.getAcc();
+        StepCount scount = stepcounter.getStep();
+
+        ds.setCorrectData(li.getLatitude(), li.getLongitude(), acc.getAccx(), acc.getAccy(), acc.getAccz(), li.getSpeed(), acc.getSvm(), (int) scount.getStep(), corrActtype);
+    }
+
+    //textView에 값 넣기
+    public void setViews() {
+        tvLat.setText(String.valueOf(ds.getLat()) + "\t ");
+        tvLon.setText(String.valueOf(ds.getLon()) + "\t ");
+        tvSpeed.setText(String.valueOf(ds.getSpeed()) + "\t ");
+        tvSvm.setText(String.valueOf(ds.getSvm()) + "\t ");
+        tvStep.setText(String.valueOf((int) ds.getStep()));
+        tvActtype.setText(ds.getCurracttype());
+        Log.d(TAG, "acttype: " + ds.getCurracttype());
+    }
+
+    //로그 저장
+    public void saveLog() {
+        String contents = ds.getContent();
         try {
-            FileOutputStream fos=openFileOutput("Data.txt",MODE_APPEND);
+//            if(count==1){
+//                FileOutputStream fos = openFileOutput(currtime + ".txt", MODE_PRIVATE);
+//                PrintWriter writer = new PrintWriter(fos);
+//                writer.println(contents);
+//                writer.flush();
+//                writer.close();
+//            }else if(count!=1){
+                FileOutputStream fos = openFileOutput(currtime + ".txt", MODE_APPEND);
+                //이어붙이기로
+                PrintWriter writer = new PrintWriter(fos);
+                writer.println(contents);
+                writer.flush();
+                writer.close();
+//            }
+            Toast.makeText(this, "saved", Toast.LENGTH_SHORT).show();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    //로그 수집
+    public void corrLog() {
+        String corrData = ds.getCorrdata();
+        try {
+            FileOutputStream fos = openFileOutput(currtime + ".txt", MODE_PRIVATE);
             //이어붙이기로
-            PrintWriter writer= new PrintWriter(fos);
-            writer.println(contents);
+            PrintWriter writer = new PrintWriter(fos);
+            writer.println(corrData);
             writer.flush();
             writer.close();
 
-            Toast.makeText(this, "saved",Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "corrected", Toast.LENGTH_SHORT).show();
 
-        } catch (FileNotFoundException e) {e.printStackTrace();}
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
 
-    }
-    public void UpdateData() {
-        Acceleration acc = accelerometer.getAcc();
-        StepCount scount = stepcounter.getStep();
-        tvLat.setText(String.valueOf(li.getLatitude()) + "\t ");
-        tvLon.setText(String.valueOf(li.getLongitude()) + "\t ");
-        tvSpeed.setText(String.valueOf(li.getSpeed()) + "\t ");
-        tvSvm.setText(String.valueOf(acc.getSvm()) + "\t ");
-        tvStep.setText(String.valueOf((int) scount.getStep()));
-        String acttypeStr = model.classifyActtype(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm());
-        tvActtype.setText(acttypeStr);
-        Log.d(TAG, "acttype: " + acttypeStr);
     }
 
     class BackgroundThread extends Thread {
         boolean running = false;
 
         public void run() {
-            int value = 0;
+            int value = 1;
             running = true;
             while (running) {
                 Message message = handler.obtainMessage();
                 Bundle bundle = new Bundle();
                 bundle.putInt("value", value);
+                bundle.putString("corrActtype", corrActtype);
                 message.setData(bundle);
                 handler.sendMessage(message);
 
                 try {
-                    Thread.sleep(cycle*1000);
+                    Thread.sleep(cycle * 1000);
                 } catch (Exception e) {
+                    Log.e(TAG, e.getMessage());
                 }
             }
         }
@@ -350,12 +402,19 @@ public class MainActivity extends AppCompatActivity
             super.handleMessage(msg);
             Bundle bundle = msg.getData();
             int value = bundle.getInt("value");
-            String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-            String content = now + "," + tvLat.getText() + "," + tvLon.getText() + "," + tvSpeed.getText() + "," + tvSvm.getText() + "," + tvActtype.getText();
-            if (value == 0) {
-                saveLog(content);
-                UpdateData();
-                Log.d(TAG, "time: " + now);
+            String data = bundle.getString("corrActtype");
+
+            if (value == 1) {
+                if (!data.equals(" ")) {
+                    correctData();
+                    setViews();
+                    corrLog();
+                } else {
+                    updateData();
+                    setViews();
+                    saveLog();
+                    count = 2;
+                }
 
             }
         }
@@ -538,23 +597,24 @@ public class MainActivity extends AppCompatActivity
         });
         builder.create().show();
     }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        switch (requestCode) {
-            case GPS_ENABLE_REQUEST_CODE:
-                //사용자가 GPS 활성 시켰는지 검사
-                if (checkLocationServicesStatus()) {
-                    if (checkLocationServicesStatus()) {
-                        Log.d(TAG, "onActivityResult : GPS 활성화 되있음");
-                        needRequest = true;
-
-                        return;
-                    }
-                }
-                break;
-        }
-    }
+//
+//    @Override
+//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+//        super.onActivityResult(requestCode, resultCode, data);
+//        Log.d(TAG, "[RAR] call onActivityResult");
+//
+//        switch (requestCode) {
+//            case GPS_ENABLE_REQUEST_CODE:
+//                //사용자가 GPS 활성 시켰는지 검사
+//                if (checkLocationServicesStatus()) {
+//                    if (checkLocationServicesStatus()) {
+//                        Log.d(TAG, "[RAR] onActivityResult : GPS 활성화 되있음");
+//                        needRequest = true;
+//
+//                        return;
+//                    }
+//                }
+//                break;
+//        }
+//    }
 }

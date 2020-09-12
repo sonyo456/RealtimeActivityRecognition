@@ -157,71 +157,68 @@
     </LinearLayout>
 
     <LinearLayout
+
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="행동 유형" />
+
         <RadioGroup
             android:id="@+id/radioGroup2"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
-            <TextView
+            <RadioButton
+                android:id="@+id/rbwalking"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="행동 유형" />
+                android:layout_weight="1"
+                android:text="걷기"
+                android:textSize="12sp"/>
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <RadioButton
+                android:id="@+id/rbinvehicle"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:layout_weight="1"
+                android:text="자전거타기"
+                android:textSize="12sp"/>
 
-                <RadioButton
-                    android:id="@+id/rbwalking"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="걷기" />
-
-                <RadioButton
-                    android:id="@+id/rbrunning"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="뛰기" />
-
-                <RadioButton
-                    android:id="@+id/rbinvehicle"
-                    android:layout_width="43dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="자전거타기" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
+            <RadioButton
+                android:id="@+id/rbrunning"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:layout_weight="1"
+                android:text="뛰기"
+                android:textSize="12sp"/>
 
-                <RadioButton
-                    android:id="@+id/rbincar"
-                    android:layout_width="141dp"
-                    android:layout_height="wrap_content"
-                    android:text="차타기" />
+            <RadioButton
+                android:id="@+id/rbincar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="차타기"
+                android:textSize="12sp" />
 
-                <RadioButton
-                    android:id="@+id/rbstationary"
-                    android:layout_width="144dp"
-                    android:layout_height="wrap_content"
-                    android:text="멈춤" />
-                <RadioButton
-                    android:id="@+id/rbunknown"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="unknown" />
-            </LinearLayout>
+            <RadioButton
+                android:id="@+id/rbstationary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="멈춤"
+                android:textSize="12sp" />
+
+            <RadioButton
+                android:id="@+id/rbunknown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="unknown"
+                android:textSize="12sp"/>
+
         </RadioGroup>
 
     </LinearLayout>
@@ -231,7 +228,7 @@
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
-        android:layout_height="348dp"
+        android:layout_height="match_parent"
         tools:context=".MainActivity" />
 
 
