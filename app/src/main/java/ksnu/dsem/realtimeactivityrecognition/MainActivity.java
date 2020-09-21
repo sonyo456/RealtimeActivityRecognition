@@ -24,6 +24,7 @@ import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -46,6 +47,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -79,6 +81,7 @@ public class MainActivity extends AppCompatActivity
     SensorManager sManager;
     Sensor accSensor, stepSensor, linearSensor;
     View mLayout;
+    private Button btnmap;
     private TextView tvLat, tvLon, tvSpeed, tvActtype, tvSvm, tvStep;
     private RadioButton rb1sec, rb5sec, rb60sec, rbwalking, rbrunning, rbstationary, rbincar, rbinvehicle, rbunknown;
     private RadioGroup radioGroup, radioGroup2;
@@ -93,7 +96,6 @@ public class MainActivity extends AppCompatActivity
     ValueHandler handler = new ValueHandler();
     private int cycle = 5;
     String corrActtype = " ";
-    int count = 1;
     String currtime;
 
     //액티비티 인스턴스가 최초로 생성될 때 호출
@@ -105,6 +107,7 @@ public class MainActivity extends AppCompatActivity
                 WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_main);
+        btnmap = (Button)findViewById(R.id.bntmap);
         tvLat = (TextView) findViewById(R.id.tvLat);
         tvLon = (TextView) findViewById(R.id.tvLon);
         tvSpeed = (TextView) findViewById(R.id.tvSpeed);
@@ -135,10 +138,15 @@ public class MainActivity extends AppCompatActivity
         accelerometer = new Accelerometer();
         stepcounter = new StepCounter();
         li = new LocationInformation();
+        ds = new DataStructure();
+        currtime = ds.getCurrtime();
+        Log.d("ATAR_ex", currtime + "1");
         //thread 생성 및 시작
         BackgroundThread thread = new BackgroundThread();
         thread.start();
         gps = new GPS();
+
+
 //        locationRequest = gps.locationRequest;
         locationRequest = new LocationRequest()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)//배터리소모보다 정확도 우선
@@ -147,14 +155,20 @@ public class MainActivity extends AppCompatActivity
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
         builder.addLocationRequest(locationRequest);
 
-        ds = new DataStructure();
+
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
+        btnmap.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getApplicationContext(), MapActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
 
@@ -195,6 +209,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
     }
+
 
     //주기 라디오 그룹
     RadioGroup.OnCheckedChangeListener radioGroupButtonChangeListener = new RadioGroup.OnCheckedChangeListener() {
@@ -269,7 +284,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onStart() {
         super.onStart();
-        currtime = ds.getCurrtime();
+
         Log.d(TAG, "[RAR] onStart");
 
         if (checkPermission()) {
@@ -284,13 +299,13 @@ public class MainActivity extends AppCompatActivity
         sManager.registerListener(stepcounter, stepSensor, SensorManager.SENSOR_DELAY_NORMAL);
         sManager.registerListener(accelerometer, linearSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
+
     }
 
     //액티비티 사용자에게 보이지 않음, 포그라운드로 액티비티가 들어가면 onRestart 호출/ 종료시 onDestory 호출
     @Override
     protected void onStop() {
         super.onStop();
-
         if (mFusedLocationClient != null) {
             Log.d(TAG, "[RAR] onStop : call stopLocationUpdates");
             mFusedLocationClient.removeLocationUpdates(this.locationCallback);
@@ -307,6 +322,10 @@ public class MainActivity extends AppCompatActivity
 
         ds.setCurrentData(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm(), (int) scount.getStep(), acttypeStr);
         Log.d(TAG, "acttype: " + acttypeStr);
+        for (int i = 0; i < acc.getAccArray().size(); i++) {
+            Log.d(TAG, "arraylist: " + acc.getAccArray().get(i));
+        }
+
     }
 
     //데이터 수집
@@ -315,6 +334,12 @@ public class MainActivity extends AppCompatActivity
         StepCount scount = stepcounter.getStep();
 
         ds.setCorrectData(li.getLatitude(), li.getLongitude(), acc.getAccx(), acc.getAccy(), acc.getAccz(), li.getSpeed(), acc.getSvm(), (int) scount.getStep(), corrActtype);
+    }
+    //xyz데이터 수집
+    public void XYZData() {
+        Acceleration acc = accelerometer.getAcc();
+        StepCount scount = stepcounter.getStep();
+        ds.setXYZtData(acc.getAccArray());
     }
 
     //textView에 값 넣기
@@ -326,26 +351,35 @@ public class MainActivity extends AppCompatActivity
         tvStep.setText(String.valueOf((int) ds.getStep()));
         tvActtype.setText(ds.getCurracttype());
         Log.d(TAG, "acttype: " + ds.getCurracttype());
+
     }
 
-    //로그 저장
+    //분류데이터 저장
     public void saveLog() {
         String contents = ds.getContent();
+        String date = ds.getDate();
+
         try {
-//            if(count==1){
-//                FileOutputStream fos = openFileOutput(currtime + ".txt", MODE_PRIVATE);
-//                PrintWriter writer = new PrintWriter(fos);
-//                writer.println(contents);
-//                writer.flush();
-//                writer.close();
-//            }else if(count!=1){
-                FileOutputStream fos = openFileOutput(currtime + ".txt", MODE_APPEND);
+//            Log.d("ATAR_ex", date + "2");
+            String fileName = "Log_"+date + ".txt";
+            String filePath = "/data/data/ksnu.dsem.realtimeactivityrecognition/files/"+fileName;
+            Log.d("ATAR_ex", filePath);
+            if (new File(filePath).exists()) {
+                FileOutputStream fos = openFileOutput(fileName, MODE_APPEND);
                 //이어붙이기로
+                Toast.makeText(this, "saved2", Toast.LENGTH_SHORT).show();
                 PrintWriter writer = new PrintWriter(fos);
                 writer.println(contents);
                 writer.flush();
                 writer.close();
-//            }
+            } else {
+                FileOutputStream fos = openFileOutput(fileName, MODE_PRIVATE);
+
+                PrintWriter writer = new PrintWriter(fos);
+                writer.println(contents);
+                writer.flush();
+                writer.close();
+            }
             Toast.makeText(this, "saved", Toast.LENGTH_SHORT).show();
 
         } catch (FileNotFoundException e) {
@@ -354,18 +388,65 @@ public class MainActivity extends AppCompatActivity
 
     }
 
-    //로그 수집
+    //데이터 수집
     public void corrLog() {
         String corrData = ds.getCorrdata();
+        String date = ds.getDate();
         try {
-            FileOutputStream fos = openFileOutput(currtime + ".txt", MODE_PRIVATE);
-            //이어붙이기로
-            PrintWriter writer = new PrintWriter(fos);
-            writer.println(corrData);
-            writer.flush();
-            writer.close();
 
+            String fileName = "Correct_"+date + ".txt";
+            String filePath = "/data/data/ksnu.dsem.realtimeactivityrecognition/files/"+fileName;
+
+            if (new File(filePath).exists()) {
+                FileOutputStream fos = openFileOutput(fileName, MODE_APPEND);
+                //이어붙이기로
+                Toast.makeText(this, "saved2", Toast.LENGTH_SHORT).show();
+                PrintWriter writer = new PrintWriter(fos);
+                writer.println(corrData);
+                writer.flush();
+                writer.close();
+            } else {
+                FileOutputStream fos = openFileOutput(fileName, MODE_PRIVATE);
+
+                PrintWriter writer = new PrintWriter(fos);
+                writer.println(corrData);
+                writer.flush();
+                writer.close();
+            }
             Toast.makeText(this, "corrected", Toast.LENGTH_SHORT).show();
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    //XYZ 값 arrayList로 수집 후 txt
+    public void corrXYZ() {
+        String corrXYZ = ds.getXYZdata();
+        String date = ds.getDate();
+        try {
+
+            String fileName = "SVM"+date + ".txt";
+            String filePath = "/data/data/ksnu.dsem.realtimeactivityrecognition/files/"+fileName;
+
+            if (new File(filePath).exists()) {
+                FileOutputStream fos = openFileOutput(fileName, MODE_APPEND);
+                //이어붙이기로
+                Toast.makeText(this, "saved2", Toast.LENGTH_SHORT).show();
+                PrintWriter writer = new PrintWriter(fos);
+                writer.println(corrXYZ);
+                writer.flush();
+                writer.close();
+            } else {
+                FileOutputStream fos = openFileOutput(fileName, MODE_PRIVATE);
+
+                PrintWriter writer = new PrintWriter(fos);
+                writer.println(corrXYZ);
+                writer.flush();
+                writer.close();
+            }
+            Toast.makeText(this, "corrected_XYZ", Toast.LENGTH_SHORT).show();
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -379,6 +460,7 @@ public class MainActivity extends AppCompatActivity
         public void run() {
             int value = 1;
             running = true;
+            currtime = ds.getCurrtime();
             while (running) {
                 Message message = handler.obtainMessage();
                 Bundle bundle = new Bundle();
@@ -409,11 +491,12 @@ public class MainActivity extends AppCompatActivity
                     correctData();
                     setViews();
                     corrLog();
+                    corrXYZ();
                 } else {
                     updateData();
                     setViews();
                     saveLog();
-                    count = 2;
+                    corrXYZ();
                 }
 
             }
