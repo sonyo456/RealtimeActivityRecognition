@@ -498,16 +498,13 @@ public class MainActivity extends AppCompatActivity
             if (value == 1) {
                 if (!data.equals(" ")) {
                     correctData();
-                    setViews();
                     corrLog();
-                    corrXYZ();
-                } else {
+                }
                     updateData();
                     setViews();
-                    corrLog();
                     saveLog();
                     corrXYZ();
-                }
+
 
 
             }
