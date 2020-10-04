@@ -1,0 +1,887 @@
+Index: app/src/main/res/layout/activity_popup.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/activity_popup.xml	(date 1601814713196)
++++ app/src/main/res/layout/activity_popup.xml	(date 1601814713196)
+@@ -0,0 +1,78 @@
++<?xml version="1.0" encoding="utf-8"?>
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:layout_width="300dp"
++    android:layout_height="wrap_content"
++    android:background="#eeeeee"
++    android:orientation="vertical"
++    tools:context=".PopupActivity">
++
++
++    <!-- 타이틀바 -->
++    <LinearLayout
++        android:orientation="horizontal"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content">
++        <TextView
++            android:text="새 모델 받기"
++            android:textSize="20sp"
++            android:textColor="#fff"
++            android:gravity="center"
++            android:background="#ff7a00"
++            android:layout_width="match_parent"
++            android:layout_height="53dp" />
++    </LinearLayout>
++    <!-- //end 타이틀바 -->
++
++    <!-- Notice -->
++    <LinearLayout
++        android:padding="24dp"
++        android:orientation="vertical"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content">
++        <ProgressBar
++            android:id="@+id/progress"
++            android:layout_width="match_parent"
++            android:layout_height="50dp"
++            style="?android:attr/progressBarStyleHorizontal"
++        android:indeterminateOnly="false"
++        android:max="100"
++        android:progress="25"
++        />
++<!--        <TextView-->
++<!--            android:id="@+id/txtText"-->
++<!--            android:textSize="15sp"-->
++<!--            android:textColor="#000"-->
++<!--            android:alpha="0.87"-->
++<!--            android:gravity="center"-->
++<!--            android:layout_marginBottom="3dp"-->
++<!--            android:layout_width="match_parent"-->
++<!--            android:layout_height="wrap_content" />-->
++    </LinearLayout>
++    <!-- Notice -->
++
++    <View
++        android:background="#66bdbdbd"
++        android:layout_width="match_parent"
++        android:layout_height="1dp" />
++
++    <!-- 닫기 버튼 -->
++    <LinearLayout
++        android:orientation="horizontal"
++        android:gravity="center"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content">
++        <Button
++            android:text="확인"
++            android:textSize="15sp"
++            android:textColor="#ff7a00"
++            android:padding="16dp"
++            android:gravity="center"
++            android:background="#00000000"
++            android:layout_width="match_parent"
++            android:layout_height="53dp"
++            android:onClick="mOnClose"/>
++    </LinearLayout>
++
++</LinearLayout>
+Index: app/src/main/java/ksnu/dsem/structure/Acceleration.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/ksnu/dsem/structure/Acceleration.java	(revision 415963380b4e2ad4d2afeb2634fdf378693e877d)
++++ app/src/main/java/ksnu/dsem/structure/Acceleration.java	(date 1601815037186)
+@@ -1,5 +1,7 @@
+ package ksnu.dsem.structure;
+ 
++import java.util.*;
++
+ public class Acceleration {
+     private double accx;
+     private double accy;
+@@ -7,19 +9,19 @@
+     private double liAccx;
+     private double liAccy;
+     private double liAccz;
+-
++    public ArrayList<String> accArray = new ArrayList<String>();
+     public static double svm;
+ 
+     //    private double msvm;
+     public Acceleration() {
+ 
+-        this(0, 0, 0, 0, 0, 0, 0);
++        this(0, 0, 0 ,0, 0, 0, 0);
+     }
+-
+     public Acceleration(double accx, double accy, double accz, double liAccx, double liAccy,double liAccz,double svm) {
+         this.accx = accx;
+         this.accy = accy;
+         this.accz = accz;
++
+         this.liAccx = liAccx;
+         this.liAccy = liAccy;
+         this.liAccz = liAccz;
+@@ -54,8 +56,9 @@
+         this.svm = svm;
+     }
+ 
+-    public void calculateSVM () {
++    public double calculateSVM () {
+         this.svm = Math.sqrt(Math.pow(this.accx, 2) + Math.pow(this.accy, 2) + Math.pow(this.accz, 2));
++        return svm;
+     }
+ 
+     public double getAccx() {
+@@ -70,6 +73,10 @@
+         return this.accz;
+     }
+ 
++    public ArrayList<String> getAccArray() {
++        return accArray;
++    }
++
+     public double getLiAccx() {
+         return liAccx;
+     }
+@@ -90,8 +97,14 @@
+         this.accx = x;
+         this.accy = y;
+         this.accz = z;
+-        this.calculateSVM();
++        putArray(this.accx, this.accy, this.accz, this.calculateSVM());
+     }
++
++    public void putArray(double x, double y, double z, double svm){
++        String data = x + ":" + y + ":" + z + ":" +svm + "/";
++        this.accArray.add(data);
++    }
++
+     public void setLinearXYZ(double liearx, double lieary, double liearz) {
+         this.liAccx = liearx;
+         this.liAccy = lieary;
+@@ -104,4 +117,4 @@
+         this.accz = z;
+         this.svm = svm;
+     }
+-}
++}
+\ No newline at end of file
+Index: app/src/main/AndroidManifest.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/AndroidManifest.xml	(revision 415963380b4e2ad4d2afeb2634fdf378693e877d)
++++ app/src/main/AndroidManifest.xml	(date 1601814713191)
+@@ -28,7 +28,9 @@
+         android:roundIcon="@mipmap/ic_launcher_round"
+         android:supportsRtl="true"
+         android:theme="@style/AppTheme">
+-        <activity android:name=".MapActivity"></activity>
++        <activity android:name=".PopupActivity" android:theme="@android:style/Theme.Dialog"/>
++
++        <activity android:name=".MapActivity" />
+         <activity android:name=".MainActivity">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+Index: app/src/main/java/ksnu/dsem/structure/DataStructure.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/ksnu/dsem/structure/DataStructure.java	(revision 415963380b4e2ad4d2afeb2634fdf378693e877d)
++++ app/src/main/java/ksnu/dsem/structure/DataStructure.java	(date 1601815066365)
+@@ -1,6 +1,7 @@
+ package ksnu.dsem.structure;
+ 
+ import java.text.SimpleDateFormat;
++import java.util.ArrayList;
+ import java.util.Date;
+ 
+ public class DataStructure {
+@@ -15,6 +16,8 @@
+     private int step;
+     private String curracttype;
+     private String corracttype;
++    private String date;
++    ArrayList<String> AccArray;
+ 
+     public DataStructure() {
+         this("", 0,0,0,0,0,0,0,0,"", "");
+@@ -56,12 +59,19 @@
+         this.step = step;
+         this.corracttype = corracttype;
+     }
+-
++    public void setXYZtData(ArrayList<String> AccArray) {
++        this.updateCurrentTime();
++        this.AccArray = AccArray;
++    }
+     public void updateCurrentTime() {
+-        this.currtime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
++        long now = System.currentTimeMillis();
++        Date dt = new Date(now);
++        this.currtime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(dt);
++        this.date = new SimpleDateFormat("yyyyMMdd").format(dt);
+     }
+ 
+     public String getCurrtime() {
++
+         return currtime;
+     }
+ 
+@@ -69,6 +79,14 @@
+         this.currtime = currtime;
+     }
+ 
++    public String getDate() {
++        return date;
++    }
++
++    public void setDate(String date) {
++        this.date = date;
++    }
++
+     public int getStep() {
+         return step;
+     }
+@@ -159,4 +177,10 @@
+ 
+         return data;
+     }
+-}
++
++    public String getXYZdata() {
++        String data = currtime + "," + AccArray;
++
++        return data;
++    }
++}
+\ No newline at end of file
+Index: app/src/main/res/layout/activity_main.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/activity_main.xml	(revision 415963380b4e2ad4d2afeb2634fdf378693e877d)
++++ app/src/main/res/layout/activity_main.xml	(date 1601815378376)
+@@ -11,6 +11,43 @@
+         android:layout_height="wrap_content"
+         android:orientation="vertical">
+ 
++        <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="horizontal"
++            android:layout_gravity="center">
++
++            <EditText
++                android:id="@+id/etID"
++                android:layout_width="153dp"
++                android:layout_height="match_parent"
++                android:layout_gravity="center"
++                android:text="ID를 입력하세요."
++                android:textColorHint="#ff000000"
++                android:textSize="12sp"
++
++                />
++            <Button
++                android:layout_width="wrap_content"
++                android:layout_height="match_parent"
++                android:id="@+id/btnloadmd"
++                android:text="학습모델 받기"/>
++
++            <TextView
++            android:layout_width="wrap_content"
++            android:layout_height="match_parent"
++            android:text="                    " />
++
++            <Button
++                android:id = "@+id/bntmap"
++                android:layout_width="wrap_content"
++                android:layout_height="match_parent"
++                android:text = "지도보기"/>
++
++
++        </LinearLayout>
++
++
+         <LinearLayout
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content"
+Index: app/src/main/java/ksnu/dsem/realtimeactivityrecognition/MainActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/ksnu/dsem/realtimeactivityrecognition/MainActivity.java	(revision 415963380b4e2ad4d2afeb2634fdf378693e877d)
++++ app/src/main/java/ksnu/dsem/realtimeactivityrecognition/MainActivity.java	(date 1601815983273)
+@@ -24,6 +24,7 @@
+ import android.util.Log;
+ import android.view.View;
+ import android.view.WindowManager;
++import android.widget.Button;
+ import android.widget.RadioButton;
+ import android.widget.RadioGroup;
+ import android.widget.TextView;
+@@ -46,6 +47,7 @@
+ import com.google.android.gms.maps.model.MarkerOptions;
+ import com.google.android.material.snackbar.Snackbar;
+ 
++import java.io.File;
+ import java.io.FileNotFoundException;
+ import java.io.FileOutputStream;
+ import java.io.IOException;
+@@ -79,6 +81,7 @@
+     SensorManager sManager;
+     Sensor accSensor, stepSensor, linearSensor;
+     View mLayout;
++    private Button btnmap, btnloadmodel;
+     private TextView tvLat, tvLon, tvSpeed, tvActtype, tvSvm, tvStep;
+     private RadioButton rb1sec, rb5sec, rb60sec, rbwalking, rbrunning, rbstationary, rbincar, rbinvehicle, rbunknown;
+     private RadioGroup radioGroup, radioGroup2;
+@@ -93,7 +96,6 @@
+     ValueHandler handler = new ValueHandler();
+     private int cycle = 5;
+     String corrActtype = " ";
+-    int count = 1;
+     String currtime;
+ 
+     //액티비티 인스턴스가 최초로 생성될 때 호출
+@@ -105,6 +107,8 @@
+                 WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+ 
+         setContentView(R.layout.activity_main);
++        btnmap = (Button)findViewById(R.id.bntmap);
++        btnloadmodel = (Button)findViewById(R.id.btnloadmd);
+         tvLat = (TextView) findViewById(R.id.tvLat);
+         tvLon = (TextView) findViewById(R.id.tvLon);
+         tvSpeed = (TextView) findViewById(R.id.tvSpeed);
+@@ -135,10 +139,15 @@
+         accelerometer = new Accelerometer();
+         stepcounter = new StepCounter();
+         li = new LocationInformation();
++        ds = new DataStructure();
++        currtime = ds.getCurrtime();
++        Log.d("ATAR_ex", currtime + "1");
+         //thread 생성 및 시작
+         BackgroundThread thread = new BackgroundThread();
+         thread.start();
+         gps = new GPS();
++
++
+ //        locationRequest = gps.locationRequest;
+         locationRequest = new LocationRequest()
+                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)//배터리소모보다 정확도 우선
+@@ -147,14 +156,28 @@
+         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
+         builder.addLocationRequest(locationRequest);
+ 
+-        ds = new DataStructure();
++
+ 
+         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+ 
+         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                 .findFragmentById(R.id.map);
+         mapFragment.getMapAsync(this);
++        btnmap.setOnClickListener(new View.OnClickListener() {
++            @Override
++            public void onClick(View v) {
++//                Intent intent = new Intent(getApplicationContext(), MapActivity.class);
++//                startActivity(intent);
++            }
++        });
+ 
++        btnloadmodel.setOnClickListener(new View.OnClickListener() {
++            @Override
++            public void onClick(View v) {
++                Intent intent = new Intent(getApplicationContext(), PopupActivity.class);
++                startActivity(intent);
++            }
++        });
+     }
+ 
+ 
+@@ -196,6 +219,7 @@
+         });
+     }
+ 
++
+     //주기 라디오 그룹
+     RadioGroup.OnCheckedChangeListener radioGroupButtonChangeListener = new RadioGroup.OnCheckedChangeListener() {
+         @Override
+@@ -269,7 +293,7 @@
+     @Override
+     protected void onStart() {
+         super.onStart();
+-        currtime = ds.getCurrtime();
++
+         Log.d(TAG, "[RAR] onStart");
+ 
+         if (checkPermission()) {
+@@ -284,13 +308,13 @@
+         sManager.registerListener(stepcounter, stepSensor, SensorManager.SENSOR_DELAY_NORMAL);
+         sManager.registerListener(accelerometer, linearSensor, SensorManager.SENSOR_DELAY_NORMAL);
+ 
++
+     }
+ 
+     //액티비티 사용자에게 보이지 않음, 포그라운드로 액티비티가 들어가면 onRestart 호출/ 종료시 onDestory 호출
+     @Override
+     protected void onStop() {
+         super.onStop();
+-
+         if (mFusedLocationClient != null) {
+             Log.d(TAG, "[RAR] onStop : call stopLocationUpdates");
+             mFusedLocationClient.removeLocationUpdates(this.locationCallback);
+@@ -307,6 +331,10 @@
+ 
+         ds.setCurrentData(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm(), (int) scount.getStep(), acttypeStr);
+         Log.d(TAG, "acttype: " + acttypeStr);
++        for (int i = 0; i < acc.getAccArray().size(); i++) {
++            Log.d(TAG, "arraylist: " + acc.getAccArray().get(i));
++        }
++
+     }
+ 
+     //데이터 수집
+@@ -316,6 +344,12 @@
+ 
+         ds.setCorrectData(li.getLatitude(), li.getLongitude(), acc.getAccx(), acc.getAccy(), acc.getAccz(), li.getSpeed(), acc.getSvm(), (int) scount.getStep(), corrActtype);
+     }
++    //xyz데이터 수집
++    public void XYZData() {
++        Acceleration acc = accelerometer.getAcc();
++        StepCount scount = stepcounter.getStep();
++        ds.setXYZtData(acc.getAccArray());
++    }
+ 
+     //textView에 값 넣기
+     public void setViews() {
+@@ -326,27 +360,36 @@
+         tvStep.setText(String.valueOf((int) ds.getStep()));
+         tvActtype.setText(ds.getCurracttype());
+         Log.d(TAG, "acttype: " + ds.getCurracttype());
++
+     }
+ 
+-    //로그 저장
++    //분류데이터 저장
+     public void saveLog() {
+         String contents = ds.getContent();
++        String date = ds.getDate();
++
+         try {
+-//            if(count==1){
+-//                FileOutputStream fos = openFileOutput(currtime + ".txt", MODE_PRIVATE);
+-//                PrintWriter writer = new PrintWriter(fos);
+-//                writer.println(contents);
+-//                writer.flush();
+-//                writer.close();
+-//            }else if(count!=1){
+-                FileOutputStream fos = openFileOutput(currtime + ".txt", MODE_APPEND);
++//            Log.d("ATAR_ex", date + "2");
++            String fileName = "Log_"+date + ".txt";
++            String filePath = "/data/data/ksnu.dsem.realtimeactivityrecognition/files/"+fileName;
++            Log.d("ATAR_ex", filePath);
++            if (new File(filePath).exists()) {
++                FileOutputStream fos = openFileOutput(fileName, MODE_APPEND);
+                 //이어붙이기로
++//                Toast.makeText(this, "saved2", Toast.LENGTH_SHORT).show();
++                PrintWriter writer = new PrintWriter(fos);
++                writer.println(contents);
++                writer.flush();
++                writer.close();
++            } else {
++                FileOutputStream fos = openFileOutput(fileName, MODE_PRIVATE);
++
+                 PrintWriter writer = new PrintWriter(fos);
+                 writer.println(contents);
+                 writer.flush();
+                 writer.close();
+-//            }
+-            Toast.makeText(this, "saved", Toast.LENGTH_SHORT).show();
++            }
++//            Toast.makeText(this, "saved", Toast.LENGTH_SHORT).show();
+ 
+         } catch (FileNotFoundException e) {
+             e.printStackTrace();
+@@ -354,18 +397,65 @@
+ 
+     }
+ 
+-    //로그 수집
++    //데이터 수집
+     public void corrLog() {
+         String corrData = ds.getCorrdata();
++        String date = ds.getDate();
+         try {
+-            FileOutputStream fos = openFileOutput(currtime + ".txt", MODE_PRIVATE);
+-            //이어붙이기로
+-            PrintWriter writer = new PrintWriter(fos);
+-            writer.println(corrData);
+-            writer.flush();
+-            writer.close();
+-
+-            Toast.makeText(this, "corrected", Toast.LENGTH_SHORT).show();
++
++            String fileName = "Correct_"+date + ".txt";
++            String filePath = "/data/data/ksnu.dsem.realtimeactivityrecognition/files/"+fileName;
++
++            if (new File(filePath).exists()) {
++                FileOutputStream fos = openFileOutput(fileName, MODE_APPEND);
++                //이어붙이기로
++//                Toast.makeText(this, "saved2", Toast.LENGTH_SHORT).show();
++                PrintWriter writer = new PrintWriter(fos);
++                writer.println(corrData);
++                writer.flush();
++                writer.close();
++            } else {
++                FileOutputStream fos = openFileOutput(fileName, MODE_PRIVATE);
++
++                PrintWriter writer = new PrintWriter(fos);
++                writer.println(corrData);
++                writer.flush();
++                writer.close();
++            }
++//            Toast.makeText(this, "corrected", Toast.LENGTH_SHORT).show();
++
++        } catch (FileNotFoundException e) {
++            e.printStackTrace();
++        }
++
++    }
++
++    //XYZ 값 arrayList로 수집 후 txt
++    public void corrXYZ() {
++        String corrXYZ = ds.getXYZdata();
++        String date = ds.getDate();
++        try {
++
++            String fileName = "SVM"+date + ".txt";
++            String filePath = "/data/data/ksnu.dsem.realtimeactivityrecognition/files/"+fileName;
++
++            if (new File(filePath).exists()) {
++                FileOutputStream fos = openFileOutput(fileName, MODE_APPEND);
++                //이어붙이기로
++//                Toast.makeText(this, "saved2", Toast.LENGTH_SHORT).show();
++                PrintWriter writer = new PrintWriter(fos);
++                writer.println(corrXYZ);
++                writer.flush();
++                writer.close();
++            } else {
++                FileOutputStream fos = openFileOutput(fileName, MODE_PRIVATE);
++
++                PrintWriter writer = new PrintWriter(fos);
++                writer.println(corrXYZ);
++                writer.flush();
++                writer.close();
++            }
++//            Toast.makeText(this, "corrected_XYZ", Toast.LENGTH_SHORT).show();
+ 
+         } catch (FileNotFoundException e) {
+             e.printStackTrace();
+@@ -379,6 +469,7 @@
+         public void run() {
+             int value = 1;
+             running = true;
++            currtime = ds.getCurrtime();
+             while (running) {
+                 Message message = handler.obtainMessage();
+                 Bundle bundle = new Bundle();
+@@ -409,12 +500,15 @@
+                     correctData();
+                     setViews();
+                     corrLog();
++                    corrXYZ();
+                 } else {
+                     updateData();
+                     setViews();
++                    corrLog();
+                     saveLog();
+-                    count = 2;
++                    corrXYZ();
+                 }
++
+ 
+             }
+         }
+Index: app/src/main/java/ksnu/dsem/realtimeactivityrecognition/MapActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/ksnu/dsem/realtimeactivityrecognition/MapActivity.java	(revision 415963380b4e2ad4d2afeb2634fdf378693e877d)
++++ app/src/main/java/ksnu/dsem/realtimeactivityrecognition/MapActivity.java	(date 1601815220130)
+@@ -1,75 +1,123 @@
+-package ksnu.dsem.realtimeactivityrecognition;
+-
+-import androidx.appcompat.app.AppCompatActivity;
+-
+-import android.location.Location;
+-import android.os.Bundle;
+-import android.view.View;
+-
+-import com.google.android.gms.maps.CameraUpdate;
+-import com.google.android.gms.maps.CameraUpdateFactory;
+-import com.google.android.gms.maps.GoogleMap;
+-import com.google.android.gms.maps.SupportMapFragment;
+-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+-import com.google.android.gms.maps.model.LatLng;
+-import com.google.android.gms.maps.model.Marker;
+-import com.google.android.gms.maps.model.MarkerOptions;
+-
+-public class MapActivity extends AppCompatActivity {
+-    private Marker currentMarker = null;
+-    MainActivity mainActivity;
+-    View mLayout;
+-    GoogleMap mMap;
+-    @Override
+-    protected void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        setContentView(R.layout.activity_map);
+-
+-        mLayout = (View) findViewById(R.id.map);
+-
+-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+-                .findFragmentById(R.id.map);
+-        mapFragment.getMapAsync(mainActivity);
+-    }
+-    public void setCurrentLocation(Location location) {
+-//    public void setCurrentLocation(Location location, String markerTitle, String markerSnippet) {
+-        if (currentMarker != null) currentMarker.remove();
+-
+-        LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+-
+-        MarkerOptions markerOptions = new MarkerOptions();
+-        markerOptions.position(currentLatLng);
++//package ksnu.dsem.realtimeactivityrecognition;
++//
++//import androidx.appcompat.app.AppCompatActivity;
++//import androidx.core.app.ActivityCompat;
++//import androidx.core.content.ContextCompat;
++//
++//import android.Manifest;
++//import android.content.pm.PackageManager;
++//import android.location.Location;
++//import android.os.Bundle;
++//import android.util.Log;
++//import android.view.View;
++//
++//import com.google.android.gms.maps.CameraUpdate;
++//import com.google.android.gms.maps.CameraUpdateFactory;
++//import com.google.android.gms.maps.GoogleMap;
++//import com.google.android.gms.maps.OnMapReadyCallback;
++//import com.google.android.gms.maps.SupportMapFragment;
++//import com.google.android.gms.maps.model.BitmapDescriptorFactory;
++//import com.google.android.gms.maps.model.LatLng;
++//import com.google.android.gms.maps.model.Marker;
++//import com.google.android.gms.maps.model.MarkerOptions;
++//import com.google.android.material.snackbar.Snackbar;
++//
++//public class MapActivity extends AppCompatActivity implements OnMapReadyCallback{
++//    private Marker currentMarker = null;
++//    private static final int PERMISSIONS_REQUEST_CODE = 100;
++//    MainActivity mainActivity;
++//    View mLayout;
++//
++//    GoogleMap mMap;
++//    @Override
++//    protected void onCreate(Bundle savedInstanceState) {
++//        super.onCreate(savedInstanceState);
++//        setContentView(R.layout.activity_map);
++//
++//        mLayout = (View) findViewById(R.id.map);
++//        mainActivity = new MainActivity();
++//        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
++//                .findFragmentById(R.id.map);
++//        mapFragment.getMapAsync(this);
++//    }
++//
++//    @Override
++//    public void onMapReady(final GoogleMap googleMap) {
++//        Log.d(mainActivity.TAG, "[RAR] onMapReady :");
++//        mMap = googleMap;
++//
++//        setDefaultLocation();   //초기위치 군산대
++//
++//        //런타임 퍼미션 처리
++//        int hasFineLocationPermission = ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION);
++//        // 위치 퍼미션 체크
++//        int hasCoarseLocationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
++//
++//        if (hasFineLocationPermission == PackageManager.PERMISSION_GRANTED &&
++//                hasCoarseLocationPermission == PackageManager.PERMISSION_GRANTED) {
++//            mainActivity.startLocationUpdates(); //위치 업데이트
++//        } else {  //퍼미션
++//            if (ActivityCompat.shouldShowRequestPermissionRationale(this, mainActivity.REQUIRED_PERMISSIONS[0])) {
++//                Snackbar.make(mLayout, "이 앱을 실행하려면 위치 접근 권한이 필요합니다.",
++//                        Snackbar.LENGTH_INDEFINITE).setAction("확인", new View.OnClickListener() {
++//                    @Override
++//                    public void onClick(View view) {
++////                        ActivityCompat.requestPermissions(this, mainActivity.REQUIRED_PERMISSIONS, PERMISSIONS_REQUEST_CODE);
++//                    }
++//                }).show();
++//            } else {
++//                ActivityCompat.requestPermissions(this, mainActivity.REQUIRED_PERMISSIONS, PERMISSIONS_REQUEST_CODE);
++//            }
++//        }
++//        mMap.getUiSettings().setMyLocationButtonEnabled(true);
++//        mMap.animateCamera(CameraUpdateFactory.zoomTo(15));
++//        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
++//            @Override
++//            public void onMapClick(LatLng latLng) {
++//                Log.d(mainActivity.TAG, "onMapClick :");
++//            }
++//        });
++//    }
++//
++//    public void setCurrentLocation(Location location) {
++////    public void setCurrentLocation(Location location, String markerTitle, String markerSnippet) {
++//        if (currentMarker != null) currentMarker.remove();
++//
++//        LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
++//
++//        MarkerOptions markerOptions = new MarkerOptions();
++//        markerOptions.position(currentLatLng);
++////        markerOptions.title(markerTitle);
++////        markerOptions.snippet(markerSnippet);
++//        markerOptions.draggable(true);
++//
++//        currentMarker = mMap.addMarker(markerOptions);
++//        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(currentLatLng);
++//        mMap.moveCamera(cameraUpdate);
++//
++//    }
++//
++//    public void setDefaultLocation() {
++//
++//
++//        //디폴트 위치 군산대학교
++//        LatLng DEFAULT_LOCATION = new LatLng(35.945287, 126.682163);
++//        String markerTitle = "위치정보 가져올 수 없음";
++//        String markerSnippet = "위치 퍼미션과 GPS 활성 요부 확인하세요";
++//
++//
++//        if (currentMarker != null) currentMarker.remove();
++//
++//        MarkerOptions markerOptions = new MarkerOptions();
++//        markerOptions.position(DEFAULT_LOCATION);
+ //        markerOptions.title(markerTitle);
+ //        markerOptions.snippet(markerSnippet);
+-        markerOptions.draggable(true);
+-
+-        currentMarker = mMap.addMarker(markerOptions);
+-        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(currentLatLng);
+-        mMap.moveCamera(cameraUpdate);
+-
+-    }
+-
+-    public void setDefaultLocation() {
+-
+-
+-        //디폴트 위치 군산대학교
+-        LatLng DEFAULT_LOCATION = new LatLng(35.945287, 126.682163);
+-        String markerTitle = "위치정보 가져올 수 없음";
+-        String markerSnippet = "위치 퍼미션과 GPS 활성 요부 확인하세요";
+-
+-
+-        if (currentMarker != null) currentMarker.remove();
+-
+-        MarkerOptions markerOptions = new MarkerOptions();
+-        markerOptions.position(DEFAULT_LOCATION);
+-        markerOptions.title(markerTitle);
+-        markerOptions.snippet(markerSnippet);
+-        markerOptions.draggable(true);
+-        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
+-        currentMarker = mMap.addMarker(markerOptions);
+-
+-        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(DEFAULT_LOCATION, 15);
+-        mMap.moveCamera(cameraUpdate);
+-
+-    }
+-}
+\ No newline at end of file
++//        markerOptions.draggable(true);
++//        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED));
++//        currentMarker = mMap.addMarker(markerOptions);
++//
++//        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(DEFAULT_LOCATION, 15);
++//        mMap.moveCamera(cameraUpdate);
++//
++//    }
++//}
+\ No newline at end of file
+Index: app/src/main/java/ksnu/dsem/realtimeactivityrecognition/PopupActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/ksnu/dsem/realtimeactivityrecognition/PopupActivity.java	(date 1601814713194)
++++ app/src/main/java/ksnu/dsem/realtimeactivityrecognition/PopupActivity.java	(date 1601814713194)
+@@ -0,0 +1,63 @@
++package ksnu.dsem.realtimeactivityrecognition;
++
++import androidx.appcompat.app.AppCompatActivity;
++
++import android.app.Activity;
++import android.app.ProgressDialog;
++import android.content.Intent;
++import android.os.AsyncTask;
++import android.os.Bundle;
++import android.view.MotionEvent;
++import android.view.View;
++import android.view.Window;
++import android.widget.ProgressBar;
++import android.widget.TextView;
++
++
++public class PopupActivity extends Activity {
++
++    ProgressBar txtText;
++
++
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        //타이틀바 없애기
++        requestWindowFeature(Window.FEATURE_NO_TITLE);
++        setContentView(R.layout.activity_popup);
++
++        //UI 객체생성
++        txtText = (ProgressBar)findViewById(R.id.progress);
++
++        //데이터 가져오기
++        Intent intent = getIntent();
++        String data = intent.getStringExtra("data");
++//        txtText.setText(data);
++    }
++
++    //확인 버튼 클릭
++    public void mOnClose(View v){
++        //데이터 전달하기
++        Intent intent = new Intent();
++        intent.putExtra("result", "Close Popup");
++        setResult(RESULT_OK, intent);
++
++        //액티비티(팝업) 닫기
++        finish();
++    }
++
++    @Override
++    public boolean onTouchEvent(MotionEvent event) {
++        //바깥레이어 클릭시 안닫히게
++        if(event.getAction()==MotionEvent.ACTION_OUTSIDE){
++            return false;
++        }
++        return true;
++    }
++
++    @Override
++    public void onBackPressed() {
++        //안드로이드 백버튼 막기
++        return;
++    }
++}

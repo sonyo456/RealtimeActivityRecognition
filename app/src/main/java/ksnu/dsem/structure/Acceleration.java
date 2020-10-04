@@ -1,5 +1,7 @@
 package ksnu.dsem.structure;
 
+import java.util.*;
+
 public class Acceleration {
     private double accx;
     private double accy;
@@ -7,19 +9,19 @@ public class Acceleration {
     private double liAccx;
     private double liAccy;
     private double liAccz;
-
+    public ArrayList<String> accArray = new ArrayList<String>();
     public static double svm;
 
     //    private double msvm;
     public Acceleration() {
 
-        this(0, 0, 0, 0, 0, 0, 0);
+        this(0, 0, 0 ,0, 0, 0, 0);
     }
-
     public Acceleration(double accx, double accy, double accz, double liAccx, double liAccy,double liAccz,double svm) {
         this.accx = accx;
         this.accy = accy;
         this.accz = accz;
+
         this.liAccx = liAccx;
         this.liAccy = liAccy;
         this.liAccz = liAccz;
@@ -54,8 +56,9 @@ public class Acceleration {
         this.svm = svm;
     }
 
-    public void calculateSVM () {
+    public double calculateSVM () {
         this.svm = Math.sqrt(Math.pow(this.accx, 2) + Math.pow(this.accy, 2) + Math.pow(this.accz, 2));
+        return svm;
     }
 
     public double getAccx() {
@@ -68,6 +71,10 @@ public class Acceleration {
 
     public double getAccz() {
         return this.accz;
+    }
+
+    public ArrayList<String> getAccArray() {
+        return accArray;
     }
 
     public double getLiAccx() {
@@ -90,8 +97,14 @@ public class Acceleration {
         this.accx = x;
         this.accy = y;
         this.accz = z;
-        this.calculateSVM();
+        putArray(this.accx, this.accy, this.accz, this.calculateSVM());
     }
+
+    public void putArray(double x, double y, double z, double svm){
+        String data = x + ":" + y + ":" + z + ":" +svm + "/";
+        this.accArray.add(data);
+    }
+
     public void setLinearXYZ(double liearx, double lieary, double liearz) {
         this.liAccx = liearx;
         this.liAccy = lieary;

@@ -1,6 +1,7 @@
 package ksnu.dsem.structure;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class DataStructure {
@@ -15,6 +16,8 @@ public class DataStructure {
     private int step;
     private String curracttype;
     private String corracttype;
+    private String date;
+    ArrayList<String> AccArray;
 
     public DataStructure() {
         this("", 0,0,0,0,0,0,0,0,"", "");
@@ -56,17 +59,32 @@ public class DataStructure {
         this.step = step;
         this.corracttype = corracttype;
     }
-
+    public void setXYZtData(ArrayList<String> AccArray) {
+        this.updateCurrentTime();
+        this.AccArray = AccArray;
+    }
     public void updateCurrentTime() {
-        this.currtime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        long now = System.currentTimeMillis();
+        Date dt = new Date(now);
+        this.currtime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(dt);
+        this.date = new SimpleDateFormat("yyyyMMdd").format(dt);
     }
 
     public String getCurrtime() {
+
         return currtime;
     }
 
     public void setCurrtime(String currtime) {
         this.currtime = currtime;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
     }
 
     public int getStep() {
@@ -156,6 +174,12 @@ public class DataStructure {
 
     public String getCorrdata() {
         String data = currtime + "," + lat + "," + lon + "," + x + "," + y + "," + z + "," + speed + "," + svm + "," + step + "," + corracttype;
+
+        return data;
+    }
+
+    public String getXYZdata() {
+        String data = currtime + "," + AccArray;
 
         return data;
     }
