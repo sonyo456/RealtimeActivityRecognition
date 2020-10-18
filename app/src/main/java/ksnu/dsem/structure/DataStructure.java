@@ -167,7 +167,7 @@ public class DataStructure {
         this.corracttype = corracttype;
     }
     public String getContent() {
-        String content = currtime + "," + lat + "," + lon + "," + speed + "," + svm + "," + step + "," + curracttype;
+        String content = currtime + "," + lat + "," + lon + "," + x + "," + y + "," + z + "," + speed + "," + svm + "," + step + "," + curracttype;
 
         return content;
     }

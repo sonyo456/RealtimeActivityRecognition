@@ -8,6 +8,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -17,6 +18,7 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -25,10 +27,12 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -77,26 +81,30 @@ public class MainActivity extends AppCompatActivity
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationRequest locationRequest;
     private Location location;
-    private GPS gps;
     SensorManager sManager;
     Sensor accSensor, stepSensor, linearSensor;
     View mLayout;
     private Button btnmap, btnloadmodel;
+    private EditText etID;
     private TextView tvLat, tvLon, tvSpeed, tvActtype, tvSvm, tvStep;
     private RadioButton rb1sec, rb5sec, rb60sec, rbwalking, rbrunning, rbstationary, rbincar, rbinvehicle, rbunknown;
     private RadioGroup radioGroup, radioGroup2;
 
+
+    private GPS gps;
+    private ModelClient mc;
     private RFModel model;
     private Accelerometer accelerometer;
     private StepCounter stepcounter;
     private LocationInformation li;
-
     private DataStructure ds;
+    ProgressDialog dialog;
 
     ValueHandler handler = new ValueHandler();
     private int cycle = 5;
-    String corrActtype = " ";
+    String collectActtype = " ";
     String currtime;
+    private String path = "/data/data/ksnu.dsem.realtimeactivityrecognition/files/";
 
     //액티비티 인스턴스가 최초로 생성될 때 호출
     @Override
@@ -109,6 +117,7 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         btnmap = (Button)findViewById(R.id.bntmap);
         btnloadmodel = (Button)findViewById(R.id.btnloadmd);
+
         tvLat = (TextView) findViewById(R.id.tvLat);
         tvLon = (TextView) findViewById(R.id.tvLon);
         tvSpeed = (TextView) findViewById(R.id.tvSpeed);
@@ -166,6 +175,7 @@ public class MainActivity extends AppCompatActivity
         btnmap.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
 //                Intent intent = new Intent(getApplicationContext(), MapActivity.class);
 //                startActivity(intent);
             }
@@ -174,8 +184,16 @@ public class MainActivity extends AppCompatActivity
         btnloadmodel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), PopupActivity.class);
-                startActivity(intent);
+                etID = (EditText)findViewById(R.id.etID);
+                String userId = etID.getText().toString();
+                Log.d(TAG, userId);
+                ModelClient mc = new ModelClient();
+                SendFile sf = new SendFile();
+                CheckTypesTask task = new CheckTypesTask();
+                task.execute();
+                //userid와 파일 경로 전달
+                mc.sendId(userId, path);
+
             }
         });
     }
@@ -219,7 +237,47 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
+    //프로그레스바
+    private class CheckTypesTask extends AsyncTask<String, String, String> {
 
+        ProgressDialog asyncDialog = new ProgressDialog(
+                MainActivity.this);
+
+        @Override
+        protected void onPreExecute() {
+            asyncDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            asyncDialog.setMessage("로딩중입니다..");
+
+            // show dialog
+            asyncDialog.show();
+            super.onPreExecute();
+        }
+
+        @Override
+        protected String doInBackground(String... arg0) {
+            try {
+                for (int i = 0; i < 5; i++) {
+                    //asyncDialog.setProgress(i * 30);
+                    publishProgress(""+(int)(i * 30));
+                    Thread.sleep(500);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        protected void onProgressUpdate(String... progress) {
+            Log.d("ANDRO_ASYNC",progress[0]);
+            asyncDialog.setProgress(Integer.parseInt(progress[0]));
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            asyncDialog.dismiss();
+            super.onPostExecute(result);
+        }
+    }
     //주기 라디오 그룹
     RadioGroup.OnCheckedChangeListener radioGroupButtonChangeListener = new RadioGroup.OnCheckedChangeListener() {
         @Override
@@ -244,22 +302,22 @@ public class MainActivity extends AppCompatActivity
         public void onCheckedChanged(RadioGroup radioGroup2, @IdRes int i) {
 
             if (i == R.id.rbwalking) {
-                corrActtype = "walking";
+                collectActtype = "walking";
                 Toast.makeText(MainActivity.this, "현재 행동유형은 걷기입니다", Toast.LENGTH_SHORT).show();
             } else if (i == R.id.rbrunning) {
-                corrActtype = "running";
+                collectActtype = "running";
                 Toast.makeText(MainActivity.this, "현재 행동유형은 뛰기입니다", Toast.LENGTH_SHORT).show();
             } else if (i == R.id.rbincar) {
-                corrActtype = "in_car";
+                collectActtype = "in_car";
                 Toast.makeText(MainActivity.this, "현재 행동유형은 차타기입니다", Toast.LENGTH_SHORT).show();
             } else if (i == R.id.rbinvehicle) {
-                corrActtype = "in_vehicle";
+                collectActtype = "in_vehicle";
                 Toast.makeText(MainActivity.this, "현재 행동유형은 자전거타기입니다", Toast.LENGTH_SHORT).show();
             } else if (i == R.id.rbstationary) {
-                corrActtype = "stationary";
+                collectActtype = "stationary";
                 Toast.makeText(MainActivity.this, "현재 행동유형은 멈춤입니다", Toast.LENGTH_SHORT).show();
             } else if (i == R.id.rbunknown) {
-                corrActtype = "unknown";
+                collectActtype = "unknown";
                 Toast.makeText(MainActivity.this, "현재 행동유형은 unknown입니다", Toast.LENGTH_SHORT).show();
             }
         }
@@ -342,7 +400,7 @@ public class MainActivity extends AppCompatActivity
         Acceleration acc = accelerometer.getAcc();
         StepCount scount = stepcounter.getStep();
 
-        ds.setCorrectData(li.getLatitude(), li.getLongitude(), acc.getAccx(), acc.getAccy(), acc.getAccz(), li.getSpeed(), acc.getSvm(), (int) scount.getStep(), corrActtype);
+        ds.setCorrectData(li.getLatitude(), li.getLongitude(), acc.getAccx(), acc.getAccy(), acc.getAccz(), li.getSpeed(), acc.getSvm(), (int) scount.getStep(), collectActtype);
     }
     //xyz데이터 수집
     public void XYZData() {
@@ -371,7 +429,7 @@ public class MainActivity extends AppCompatActivity
         try {
 //            Log.d("ATAR_ex", date + "2");
             String fileName = "Log_"+date + ".txt";
-            String filePath = "/data/data/ksnu.dsem.realtimeactivityrecognition/files/"+fileName;
+            String filePath = path +fileName;
             Log.d("ATAR_ex", filePath);
             if (new File(filePath).exists()) {
                 FileOutputStream fos = openFileOutput(fileName, MODE_APPEND);
@@ -403,8 +461,8 @@ public class MainActivity extends AppCompatActivity
         String date = ds.getDate();
         try {
 
-            String fileName = "Correct_"+date + ".txt";
-            String filePath = "/data/data/ksnu.dsem.realtimeactivityrecognition/files/"+fileName;
+            String fileName = "Collect_"+date + ".txt";
+            String filePath = path+fileName;
 
             if (new File(filePath).exists()) {
                 FileOutputStream fos = openFileOutput(fileName, MODE_APPEND);
@@ -474,7 +532,7 @@ public class MainActivity extends AppCompatActivity
                 Message message = handler.obtainMessage();
                 Bundle bundle = new Bundle();
                 bundle.putInt("value", value);
-                bundle.putString("corrActtype", corrActtype);
+                bundle.putString("collActtype", collectActtype);
                 message.setData(bundle);
                 handler.sendMessage(message);
 
@@ -493,7 +551,7 @@ public class MainActivity extends AppCompatActivity
             super.handleMessage(msg);
             Bundle bundle = msg.getData();
             int value = bundle.getInt("value");
-            String data = bundle.getString("corrActtype");
+            String data = bundle.getString("collActtype");
 
             if (value == 1) {
                 if (!data.equals(" ")) {
@@ -688,24 +746,5 @@ public class MainActivity extends AppCompatActivity
         });
         builder.create().show();
     }
-//
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-//        super.onActivityResult(requestCode, resultCode, data);
-//        Log.d(TAG, "[RAR] call onActivityResult");
-//
-//        switch (requestCode) {
-//            case GPS_ENABLE_REQUEST_CODE:
-//                //사용자가 GPS 활성 시켰는지 검사
-//                if (checkLocationServicesStatus()) {
-//                    if (checkLocationServicesStatus()) {
-//                        Log.d(TAG, "[RAR] onActivityResult : GPS 활성화 되있음");
-//                        needRequest = true;
-//
-//                        return;
-//                    }
-//                }
-//                break;
-//        }
-//    }
+
 }

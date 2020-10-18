@@ -22,7 +22,7 @@
                 android:layout_width="153dp"
                 android:layout_height="match_parent"
                 android:layout_gravity="center"
-                android:text="ID를 입력하세요."
+                android:hint="ID를 입력하세요."
                 android:textColorHint="#ff000000"
                 android:textSize="12sp"
 
