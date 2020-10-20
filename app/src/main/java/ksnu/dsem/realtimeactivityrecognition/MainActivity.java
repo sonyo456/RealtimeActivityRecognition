@@ -149,6 +149,7 @@ public class MainActivity extends AppCompatActivity
         stepcounter = new StepCounter();
         li = new LocationInformation();
         ds = new DataStructure();
+        mc = new ModelClient();
         currtime = ds.getCurrtime();
         Log.d("ATAR_ex", currtime + "1");
         //thread 생성 및 시작
@@ -559,6 +560,7 @@ public class MainActivity extends AppCompatActivity
                     corrLog();
                 }
                     updateData();
+//                    mc.sendId(userId, path);
                     setViews();
                     saveLog();
                     corrXYZ();

@@ -20,7 +20,7 @@ import java.net.UnknownHostException;
 
 public class ModelClient {    //메인 activity 시작!
     private String serverIP = "203.234.62.144";
-    private int port = 12020;
+    private int port = 14020;
     private Socket socket;  //소켓생성
     BufferedReader in;      //서버로부터 온 데이터를 읽는다.
     PrintWriter out;        //서버에 데이터를 전송한다.
