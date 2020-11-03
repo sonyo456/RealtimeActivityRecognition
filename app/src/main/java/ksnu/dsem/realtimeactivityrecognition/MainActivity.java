@@ -86,7 +86,7 @@ public class MainActivity extends AppCompatActivity
     View mLayout;
     private Button btnmap, btnloadmodel;
     private EditText etID;
-    private TextView tvLat, tvLon, tvSpeed, tvActtype, tvSvm, tvStep;
+    private TextView tvLat, tvLon, tvSpeed, tvActtype, tvSvm, tvStep, tvStep_dev;
     private RadioButton rb1sec, rb5sec, rb60sec, rbwalking, rbrunning, rbstationary, rbincar, rbinvehicle, rbunknown;
     private RadioGroup radioGroup, radioGroup2;
 
@@ -98,6 +98,7 @@ public class MainActivity extends AppCompatActivity
     private StepCounter stepcounter;
     private LocationInformation li;
     private DataStructure ds;
+    private EvaluationClient ec;
     ProgressDialog dialog;
 
     ValueHandler handler = new ValueHandler();
@@ -123,6 +124,7 @@ public class MainActivity extends AppCompatActivity
         tvSpeed = (TextView) findViewById(R.id.tvSpeed);
         tvSvm = (TextView) findViewById(R.id.tvSvm);
         tvStep = (TextView) findViewById(R.id.tvStep);
+        tvStep_dev = (TextView) findViewById(R.id.tvStep_dev);
         tvActtype = (TextView) findViewById(R.id.tvActtype);
         rb1sec = (RadioButton) findViewById(R.id.rb1sec);
         rb5sec = (RadioButton) findViewById(R.id.rb5sec);
@@ -150,6 +152,7 @@ public class MainActivity extends AppCompatActivity
         li = new LocationInformation();
         ds = new DataStructure();
         mc = new ModelClient();
+        ec = new EvaluationClient(ds);
         currtime = ds.getCurrtime();
         Log.d("ATAR_ex", currtime + "1");
         //thread 생성 및 시작
@@ -386,10 +389,16 @@ public class MainActivity extends AppCompatActivity
     public void updateData() {
         Acceleration acc = accelerometer.getAcc();
         StepCount scount = stepcounter.getStep();
-        String acttypeStr = model.classifyActtype(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm());
-
-        ds.setCurrentData(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm(), (int) scount.getStep(), acttypeStr);
-        Log.d(TAG, "acttype: " + acttypeStr);
+//        String acttypeStr = model.classifyActtype(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm(), (int)ds.getStep_dev());
+        System.out.println("걸음수"+scount.getStep_dev());
+//        ds.setCurrentData(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm(), (int) scount.getStep(), (int) scount.getStep_dev(), acttypeStr);
+//        ds.setCurrentData(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm(), (int) scount.getStep(),  acttypeStr);
+        ds.setServerData(li.getLatitude(), li.getLongitude(), acc.getAccx(), acc.getAccy(), acc.getAccz(), li.getSpeed(), acc.getSvm(), (int) scount.getStep());
+        System.out.println("메인" + ds.getLat());
+        ec.evaluation_Client(ds.getLat(), ds.getLon(), ds.getX(), ds.getY(), ds.getZ(), ds.getSvm(), ds.getSpeed(), ds.getStep(), ds.getStep_dev());
+        String acttype = ec.getActtype();
+                ds.setCurrentData(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm(), (int) scount.getStep(), acttype);
+//        Log.d(TAG, "acttype: " + acttypeStr);
         for (int i = 0; i < acc.getAccArray().size(); i++) {
             Log.d(TAG, "arraylist: " + acc.getAccArray().get(i));
         }
@@ -417,6 +426,7 @@ public class MainActivity extends AppCompatActivity
         tvSpeed.setText(String.valueOf(ds.getSpeed()) + "\t ");
         tvSvm.setText(String.valueOf(ds.getSvm()) + "\t ");
         tvStep.setText(String.valueOf((int) ds.getStep()));
+        tvStep_dev.setText(String.valueOf((int) ds.getStep_dev()));
         tvActtype.setText(ds.getCurracttype());
         Log.d(TAG, "acttype: " + ds.getCurracttype());
 
@@ -561,6 +571,7 @@ public class MainActivity extends AppCompatActivity
                 }
                     updateData();
 //                    mc.sendId(userId, path);
+
                     setViews();
                     saveLog();
                     corrXYZ();
