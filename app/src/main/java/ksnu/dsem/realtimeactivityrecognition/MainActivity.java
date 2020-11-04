@@ -389,10 +389,7 @@ public class MainActivity extends AppCompatActivity
     public void updateData() {
         Acceleration acc = accelerometer.getAcc();
         StepCount scount = stepcounter.getStep();
-//        String acttypeStr = model.classifyActtype(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm(), (int)ds.getStep_dev());
         System.out.println("걸음수"+scount.getStep_dev());
-//        ds.setCurrentData(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm(), (int) scount.getStep(), (int) scount.getStep_dev(), acttypeStr);
-//        ds.setCurrentData(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm(), (int) scount.getStep(),  acttypeStr);
         ds.setServerData(li.getLatitude(), li.getLongitude(), acc.getAccx(), acc.getAccy(), acc.getAccz(), li.getSpeed(), acc.getSvm(), (int) scount.getStep());
         System.out.println("메인" + ds.getLat());
         ec.evaluation_Client(ds.getLat(), ds.getLon(), ds.getX(), ds.getY(), ds.getZ(), ds.getSvm(), ds.getSpeed(), ds.getStep(), ds.getStep_dev());

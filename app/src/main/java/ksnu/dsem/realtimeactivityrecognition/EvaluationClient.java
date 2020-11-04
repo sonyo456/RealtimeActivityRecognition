@@ -79,6 +79,7 @@ public class EvaluationClient {
         Thread clinetThread = new Thread() {
             public void run() {
                 try {
+                    double startTime = System.currentTimeMillis();
                     c_socket = new Socket(serverIP, port);
                     setSocket(c_socket);
 
@@ -91,6 +92,9 @@ public class EvaluationClient {
                     System.out.println("send" + getActtype());
                     sendWriter.close();
                     m_Socket.close();
+                    double endTime = System.currentTimeMillis();
+                    double diffTime = (endTime - startTime) / 1000;
+                    System.out.println("[evalTime]: " + diffTime);
 //                        SendThread send_thread = new SendThread(ds.getLat(), ds.getLon(), ds.getX(), ds.getY(), ds.getZ(), ds.getSvm(), ds.getSpeed(), ds.getStep(), ds.getStep_dev());
 //
 //                        send_thread.start();
