@@ -98,6 +98,7 @@ public class MainActivity extends AppCompatActivity
     private StepCounter stepcounter;
     private LocationInformation li;
     private DataStructure ds;
+    private NetworkService networkService;
     ProgressDialog dialog;
 
     ValueHandler handler = new ValueHandler();
@@ -381,17 +382,26 @@ public class MainActivity extends AppCompatActivity
         sManager.unregisterListener(stepcounter);
     }
 
+    public void stopNetwork(){
+        if(networkService == null){
+            Intent intent = new Intent(this,NetworkService.class);
+            startService(intent);
+        }
+    }
     //데이터 업데이트
     public void updateData() {
         Acceleration acc = accelerometer.getAcc();
         StepCount scount = stepcounter.getStep();
-        String acttypeStr = model.classifyActtype(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm());
-
+        String acttypeStr = model.classifyActtype(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm(), (int)ds.getStep_dev());
+        long startTime = System.currentTimeMillis();
         ds.setCurrentData(li.getLatitude(), li.getLongitude(), li.getSpeed(), acc.getSvm(), (int) scount.getStep(), acttypeStr);
-        Log.d(TAG, "acttype: " + acttypeStr);
-        for (int i = 0; i < acc.getAccArray().size(); i++) {
-            Log.d(TAG, "arraylist: " + acc.getAccArray().get(i));
-        }
+        long endTime = System.currentTimeMillis();
+        long diffTime = endTime - startTime;
+        System.out.println("걸린시간:\t" + diffTime + "\tms");
+//        Log.d(TAG, "acttype: " + acttypeStr);
+//        for (int i = 0; i < acc.getAccArray().size(); i++) {
+//            Log.d(TAG, "arraylist: " + acc.getAccArray().get(i));
+//        }
 
     }
 
@@ -554,6 +564,7 @@ public class MainActivity extends AppCompatActivity
             String data = bundle.getString("collActtype");
 
             if (value == 1) {
+                stopNetwork();
                 if (!data.equals(" ")) {
                     correctData();
                     corrLog();

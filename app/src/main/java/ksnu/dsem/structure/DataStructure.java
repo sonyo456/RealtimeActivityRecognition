@@ -14,16 +14,17 @@ public class DataStructure {
     private double speed;
     private double svm;
     private int step;
+    private int step_dev;
     private String curracttype;
     private String corracttype;
     private String date;
     ArrayList<String> AccArray;
 
     public DataStructure() {
-        this("", 0,0,0,0,0,0,0,0,"", "");
+        this("", 0, 0, 0, 0, 0, 0, 0, 0, 0, "", "");
     }
 
-    public DataStructure(String currtime, double lat, double lon, double x,double y,double z,double speed, double svm, int step, String curracttype, String corracttype) {
+    public DataStructure(String currtime, double lat, double lon, double x, double y, double z, double speed, double svm, int step, int step_dev, String curracttype, String corracttype) {
         this.currtime = currtime;
         this.lat = lat;
         this.lon = lon;
@@ -33,16 +34,18 @@ public class DataStructure {
         this.speed = speed;
         this.svm = svm;
         this.step = step;
+        this.step_dev = step_dev;
         this.curracttype = curracttype;
         this.corracttype = corracttype;
     }
 
-    public void setCurrentData(double lat, double lon, double speed, double svm, int step,  String curracttype) {
+    public void setCurrentData(double lat, double lon, double speed, double svm, int step, String curracttype) {
         this.updateCurrentTime();
         this.lat = lat;
         this.lon = lon;
         this.speed = speed;
         this.svm = svm;
+        this.step_dev = step - this.step;
         this.step = step;
         this.curracttype = curracttype;
     }
@@ -57,6 +60,7 @@ public class DataStructure {
         this.speed = speed;
         this.svm = svm;
         this.step = step;
+        this.step_dev = step - this.step;
         this.corracttype = corracttype;
     }
     public void setXYZtData(ArrayList<String> AccArray) {
@@ -94,6 +98,13 @@ public class DataStructure {
     public void setStep(int step) {
         this.step = step;
     }
+    public int getStep_dev() {
+        return step_dev;
+    }
+    public void setStep_dev(int step_dev) {
+        this.step_dev = step_dev;
+    }
+
 
     public double getLat() {
         return lat;

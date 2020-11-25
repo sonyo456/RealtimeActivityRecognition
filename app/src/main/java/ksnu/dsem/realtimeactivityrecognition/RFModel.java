@@ -19,6 +19,7 @@ public class RFModel {
     private final Attribute attribute_LON = new Attribute("LON");
     private final Attribute attribute_SVM = new Attribute("SVM");
     private final Attribute attribute_SPEED = new Attribute("SPEED");
+    private final Attribute attribute_STEP_DEV = new Attribute("STEP_DEV");
     private final List<String> actClassList = new ArrayList<String>() {
         {
             add("WALKING");
@@ -39,6 +40,8 @@ public class RFModel {
 
     public Acceleration acc;
 
+//    public StepCount scount;
+
     public RFModel() {
         this.attributeList = new ArrayList<Attribute>(2) {
             {
@@ -47,6 +50,7 @@ public class RFModel {
                 add(attribute_LON);
                 add(attribute_SVM);
                 add(attribute_SPEED);
+                add(attribute_STEP_DEV);
                 Attribute attributeClass = new Attribute("@@class@@", actClassList);
                 add(attributeClass);
             }
@@ -61,13 +65,14 @@ public class RFModel {
 
         this.location = new LocationInformation();
         this.acc = new Acceleration();
+//        this.scount = new StepCount();
         //AssetManager assetManager = getAssets();
         try {
             //cls = (Classifier) weka.core.SerializationHelper.read(getAssets().open("REAL_MODEL.model"));
             //실제 핸드폰
-            classifier = (Classifier) weka.core.SerializationHelper.read("/data/data/ksnu.dsem.realtimeactivityrecognition/NO_HR_MODEL.model");
+            classifier = (Classifier) weka.core.SerializationHelper.read("/data/data/ksnu.dsem.realtimeactivityrecognition/MOBILE_MODEL.model");
 
-//            classifier = (Classifier) weka.core.SerializationHelper.read("/data/user/0/ksnu.dsem.realtimeactivityrecognition/model/NO_HR_MODEL.model");
+//            classifier = (Classifier) weka.core.SerializationHelper.read("/data/user/0/ksnu.dsem.realtimeactivityrecognition/model/MOBILE_MODEL.model");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -88,13 +93,15 @@ public class RFModel {
         this.acc.setXYZ(x, y, z);
         this.acc.calculateSVM();
     }
-
+//    public void setStep_dev(int step_dev) {
+//        this.scount.setStep_dev(step_dev);
+//    }
     public void setSvm(Acceleration acc) {
         this.acc = acc;
     }
 
     //매개변수
-    public String classifyActtype(double latitude, double longitude, double speed, double svm) {
+    public String classifyActtype(double latitude, double longitude, double speed, double svm, int step_dev) {
         String acttype = "";
 
         DenseInstance currentInstance = new DenseInstance(dataUnpredicted.numAttributes()) {
@@ -104,6 +111,7 @@ public class RFModel {
                 setValue(attribute_LON, longitude);
                 setValue(attribute_SPEED, speed);
                 setValue(attribute_SVM, svm);
+                setValue(attribute_STEP_DEV, step_dev);
 
             }
         };
